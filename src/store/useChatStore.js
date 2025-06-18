@@ -9,6 +9,7 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  typingUsers: [],
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -73,14 +74,61 @@ export const useChatStore = create((set, get) => ({
         }));
       }
     });
+
+    socket.on("userTyping", (data) => {
+      const { selectedUser, typingUsers } = get();
+      if (data.senderId === selectedUser._id) {
+        if (!typingUsers.includes(data.senderId)) {
+          set({ typingUsers: [...typingUsers, data.senderId] });
+        }
+      }
+    });
+
+    socket.on("userStoppedTyping", (data) => {
+      const { typingUsers } = get();
+      set({ 
+        typingUsers: typingUsers.filter(userId => userId !== data.senderId) 
+      });
+    });
   },
 
   dontListenToMessages: () => {
     const socket = useAuthStore.getState().socket;
     if (socket) {
       socket.off("newMessage");
+      socket.off("userTyping");
+      socket.off("userStoppedTyping");
     }
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  emitTyping: (receiverId) => {
+    const socket = useAuthStore.getState().socket;
+    const authUser = useAuthStore.getState().authUser;
+    if (socket && authUser) {
+      socket.emit("typing", {
+        receiverId,
+        senderId: authUser._id,
+        senderName: authUser.fullname
+      });
+    }
+  },
+
+  emitStopTyping: (receiverId) => {
+    const socket = useAuthStore.getState().socket;
+    const authUser = useAuthStore.getState().authUser;
+    if (socket && authUser) {
+      socket.emit("stopTyping", {
+        receiverId,
+        senderId: authUser._id
+      });
+    }
+  },
+
+  setSelectedUser: (selectedUser) => {
+    set({ selectedUser, messages: [], typingUsers: [] });
+  },
+
+  clearMessages: () => {
+    set({ messages: [], typingUsers: [] });
+  },
 }));

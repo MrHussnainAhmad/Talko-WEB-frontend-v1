@@ -3,7 +3,6 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const Base_URL = "https://talko.up.railway.app";
 export const useAuthStore = create((set, get) => ({
   authUser: null,
   isSignup: false,
@@ -113,6 +112,15 @@ export const useAuthStore = create((set, get) => ({
         receiverId,
         message,
       });
+      
+      const socket = get().socket;
+      if (socket) {
+        socket.emit("friendRequestSent", {
+          receiverId,
+          request: res.data.request
+        });
+      }
+      
       toast.success("Friend request sent!");
       get().getOutgoingRequests();
       return { success: true };
@@ -126,6 +134,17 @@ export const useAuthStore = create((set, get) => ({
   acceptFriendRequest: async (requestId) => {
     try {
       await axiosInstance.post(`/friends/accept/${requestId}`);
+      
+      const request = get().incomingRequests.find(req => req._id === requestId);
+      const socket = get().socket;
+      if (socket && request) {
+        socket.emit("friendRequestAccepted", {
+          senderId: request.senderId._id,
+          friendId: get().authUser._id,
+          accepterName: get().authUser.fullname
+        });
+      }
+      
       toast.success("Friend request accepted!");
       get().getIncomingRequests();
       get().getFriends();
@@ -140,6 +159,16 @@ export const useAuthStore = create((set, get) => ({
   rejectFriendRequest: async (requestId) => {
     try {
       await axiosInstance.post(`/friends/reject/${requestId}`);
+      
+      const request = get().incomingRequests.find(req => req._id === requestId);
+      const socket = get().socket;
+      if (socket && request) {
+        socket.emit("friendRequestRejected", {
+          senderId: request.senderId._id,
+          friendId: get().authUser._id
+        });
+      }
+      
       toast.success("Friend request rejected");
       get().getIncomingRequests();
       return { success: true };
@@ -183,6 +212,15 @@ export const useAuthStore = create((set, get) => ({
   removeFriend: async (friendId) => {
     try {
       await axiosInstance.delete(`/friends/remove/${friendId}`);
+      
+      const socket = get().socket;
+      if (socket) {
+        socket.emit("friendRemoved", {
+          friendId,
+          userId: get().authUser._id
+        });
+      }
+      
       toast.success("Friend removed");
       get().getFriends();
       return { success: true };
@@ -205,25 +243,24 @@ export const useAuthStore = create((set, get) => ({
 
   setOnlineUsers: (users) => set({ onlineUsers: users }),
 
-connectSocket: () => {
+  connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) {
       return;
     }
     
-    console.log("Connecting socket for user:", authUser._id); // Debug log
+    console.log("Connecting socket for user:", authUser._id);
     
-    const socket = io(Base_URL, {
-      withCredentials: true, // This is crucial for cross-origin requests
+    const socket = io("http://localhost:3000", {
+      withCredentials: true,
       query: {
         userId: authUser._id,
       },
-      transports: ['websocket', 'polling'], // Allow both transports
-      timeout: 20000, // 20 second timeout
-      forceNew: true, // Force a new connection
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true,
     });
 
-    // Handle connection events
     socket.on('connect', () => {
       console.log('Socket connected successfully:', socket.id);
       set({ socket });
@@ -240,6 +277,31 @@ connectSocket: () => {
     socket.on("getOnlineUsers", (userIds) => {
       console.log('Online users updated:', userIds);
       set({ onlineUsers: userIds });
+    });
+
+    socket.on("newFriendRequest", (data) => {
+      toast.success(data.message);
+      get().getIncomingRequests();
+    });
+
+    socket.on("friendRequestAccepted", (data) => {
+      toast.success(data.message);
+      get().getOutgoingRequests();
+      get().getFriends();
+    });
+
+    socket.on("friendRequestRejected", (data) => {
+      toast.error(data.message);
+      get().getOutgoingRequests();
+    });
+
+    socket.on("friendRemoved", (data) => {
+      toast.info(data.message);
+      get().getFriends();
+    });
+
+    socket.on("userStatusUpdate", (data) => {
+      console.log('User status update:', data);
     });
 
     socket.on('error', (error) => {

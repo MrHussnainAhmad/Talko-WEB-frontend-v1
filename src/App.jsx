@@ -12,15 +12,15 @@ import { Toaster } from "react-hot-toast";
 import { useThemeStore } from "./store/useThemeStore.js";
 
 const App = () => {
-  const { 
-    authUser, 
-    checkAuth, 
-    isCheckingAuth, 
+  const {
+    authUser,
+    checkAuth,
+    isCheckingAuth,
     getIncomingRequests,
     getOutgoingRequests,
     getFriends,
     socket,
-    incomingRequests
+    incomingRequests,
   } = useAuthStore();
   const { theme } = useThemeStore();
 
@@ -44,12 +44,12 @@ const App = () => {
       socket.on("newFriendRequest", (request) => {
         // Refresh incoming requests when a new one arrives
         getIncomingRequests();
-        
+
         // Show notification toast
         if (window.Notification && Notification.permission === "granted") {
           new Notification("New Friend Request", {
             body: `${request.senderId.fullname} sent you a friend request`,
-            icon: request.senderId.profilePic || "/Profile.png"
+            icon: request.senderId.profilePic || "/Profile.png",
           });
         }
       });
@@ -58,11 +58,11 @@ const App = () => {
       socket.on("friendRequestAccepted", (data) => {
         getOutgoingRequests();
         getFriends();
-        
+
         if (window.Notification && Notification.permission === "granted") {
           new Notification("Friend Request Accepted", {
             body: `${data.acceptedBy.fullname} accepted your friend request`,
-            icon: data.acceptedBy.profilePic || "/Profile.png"
+            icon: data.acceptedBy.profilePic || "/Profile.png",
           });
         }
       });
@@ -70,11 +70,11 @@ const App = () => {
       // Listen for friend request rejection
       socket.on("friendRequestRejected", (data) => {
         getOutgoingRequests();
-        
+
         if (window.Notification && Notification.permission === "granted") {
           new Notification("Friend Request Rejected", {
             body: `${data.rejectedBy.fullname} rejected your friend request`,
-            icon: data.rejectedBy.profilePic || "/Profile.png"
+            icon: data.rejectedBy.profilePic || "/Profile.png",
           });
         }
       });
@@ -90,7 +90,11 @@ const App = () => {
 
   // Request notification permission when user logs in
   useEffect(() => {
-    if (authUser && window.Notification && Notification.permission === "default") {
+    if (
+      authUser &&
+      window.Notification &&
+      Notification.permission === "default"
+    ) {
       Notification.requestPermission();
     }
   }, [authUser]);
@@ -119,54 +123,55 @@ const App = () => {
     <div data-theme={theme}>
       <Navbar />
       <Routes>
-        <Route 
-          path="/" 
-          element={authUser ? <HomePage /> : <Navigate to="/login" />} 
+        <Route
+          path="/"
+          element={authUser ? <HomePage /> : <Navigate to="/login" />}
         />
-        <Route 
-          path="/signup" 
-          element={!authUser ? <SignupPage /> : <Navigate to="/" />} 
+        <Route
+          path="/signup"
+          element={!authUser ? <SignupPage /> : <Navigate to="/" />}
         />
-        <Route 
-          path="/login" 
-          element={!authUser ? <LoginPage /> : <Navigate to="/" />} 
+        <Route
+          path="/login"
+          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
         />
-        <Route 
-          path="/settings" 
-          element={authUser ? <SettingsPage /> : <Navigate to="/login" />} 
+        <Route
+          path="/settings"
+          // element={authUser ? <SettingsPage /> : <Navigate to="/login" />}
+          element={<SettingsPage />}
         />
-        <Route 
-          path="/profile" 
-          element={authUser ? <ProfilePage /> : <Navigate to="/login" />} 
+        <Route
+          path="/profile"
+          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
         />
-        
+
         {/* Fallback route */}
-        <Route 
-          path="*" 
-          element={<Navigate to={authUser ? "/" : "/login"} replace />} 
+        <Route
+          path="*"
+          element={<Navigate to={authUser ? "/" : "/login"} replace />}
         />
       </Routes>
 
       {/* Toast notifications with custom styling */}
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
           style: {
-            background: 'var(--fallback-b1,oklch(var(--b1)))',
-            color: 'var(--fallback-bc,oklch(var(--bc)))',
-            border: '1px solid var(--fallback-b3,oklch(var(--b3)))',
+            background: "var(--fallback-b1,oklch(var(--b1)))",
+            color: "var(--fallback-bc,oklch(var(--bc)))",
+            border: "1px solid var(--fallback-b3,oklch(var(--b3)))",
           },
           success: {
             iconTheme: {
-              primary: 'var(--fallback-su,oklch(var(--su)))',
-              secondary: 'var(--fallback-suc,oklch(var(--suc)))',
+              primary: "var(--fallback-su,oklch(var(--su)))",
+              secondary: "var(--fallback-suc,oklch(var(--suc)))",
             },
           },
           error: {
             iconTheme: {
-              primary: 'var(--fallback-er,oklch(var(--er)))',
-              secondary: 'var(--fallback-erc,oklch(var(--erc)))',
+              primary: "var(--fallback-er,oklch(var(--er)))",
+              secondary: "var(--fallback-erc,oklch(var(--erc)))",
             },
           },
         }}
