@@ -137,8 +137,7 @@ const App = () => {
         />
         <Route
           path="/settings"
-          // element={authUser ? <SettingsPage /> : <Navigate to="/login" />}
-          element={<SettingsPage />}
+          element={authUser ? <SettingsPage /> : <Navigate to="/login" />}
         />
         <Route
           path="/profile"
