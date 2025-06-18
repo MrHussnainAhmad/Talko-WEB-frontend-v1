@@ -7,7 +7,7 @@ const getBaseURL = () => {
     return "/api"; // Use proxy in development
   }
   // In production, use the actual backend URL
-  return "https://talko-backend-v1-1.vercel.app/api";
+  return "https://talko.up.railway.app/api";
 };
 
 export const axiosInstance = axios.create({

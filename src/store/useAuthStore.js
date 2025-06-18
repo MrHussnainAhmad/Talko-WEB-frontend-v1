@@ -3,7 +3,7 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const Base_URL = "https://talko-backend-v1-1.vercel.app";
+const Base_URL = "https://talko.up.railway.app";
 export const useAuthStore = create((set, get) => ({
   authUser: null,
   isSignup: false,
