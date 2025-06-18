@@ -205,26 +205,48 @@ export const useAuthStore = create((set, get) => ({
 
   setOnlineUsers: (users) => set({ onlineUsers: users }),
 
-  connectSocket: () => {
+connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) {
       return;
     }
     
+    console.log("Connecting socket for user:", authUser._id); // Debug log
+    
     const socket = io(Base_URL, {
+      withCredentials: true, // This is crucial for cross-origin requests
       query: {
         userId: authUser._id,
       },
+      transports: ['websocket', 'polling'], // Allow both transports
+      timeout: 20000, // 20 second timeout
+      forceNew: true, // Force a new connection
     });
 
-    socket.connect();
-    set({ socket });
+    // Handle connection events
+    socket.on('connect', () => {
+      console.log('Socket connected successfully:', socket.id);
+      set({ socket });
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
 
     socket.on("getOnlineUsers", (userIds) => {
+      console.log('Online users updated:', userIds);
       set({ onlineUsers: userIds });
     });
-  },
 
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+  },
+  
   disconnectSocket: () => {
     if (get().socket?.connected) {
       get().socket.disconnect();
