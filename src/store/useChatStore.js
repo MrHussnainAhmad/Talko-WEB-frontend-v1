@@ -2,7 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
 import { useAuthStore } from "./useAuthStore.js";
-import { getUserDisplayName, getUserProfilePic } from "../lib/utils.js";
+import { getUserDisplayName, getUserProfilePic, playNotificationSound } from "../lib/utils.js";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -122,6 +122,17 @@ export const useChatStore = create((set, get) => ({
       }
     });
 
+    // Listen for messageReceived event from backend and play notification sound
+    socket.on("messageReceived", (messageData) => {
+      const authUser = useAuthStore.getState().authUser;
+      
+      // Only play sound if the current user is the receiver
+      // and the page is not focused (user is on another tab/app)
+      if (messageData.receiverId === authUser?._id && document.hidden) {
+        playNotificationSound();
+      }
+    });
+
     socket.on("userTyping", (data) => {
       const { selectedUser, typingUsers } = get();
       if (data.senderId === selectedUser?._id) {
@@ -189,6 +200,7 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (socket) {
       socket.off("newMessage");
+      socket.off("messageReceived"); // Add this line
       socket.off("userTyping");
       socket.off("userStoppedTyping");
       socket.off("chatDeleted");
