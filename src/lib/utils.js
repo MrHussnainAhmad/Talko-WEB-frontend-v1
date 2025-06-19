@@ -116,6 +116,10 @@ export function formatUserForDisplay(user) {
 let audioContext = null;
 let audioEnabled = false;
 
+// Tab visibility tracking
+let isTabVisible = true;
+let visibilityChangeListener = null;
+
 export const initializeAudio = () => {
   const enableAudio = () => {
     try {
@@ -143,10 +147,44 @@ export const initializeAudio = () => {
   document.addEventListener('touchstart', enableAudio, { once: true });
 };
 
+// Initialize tab visibility tracking
+export const initializeTabVisibility = () => {
+  // Remove existing listener if any
+  if (visibilityChangeListener) {
+    document.removeEventListener('visibilitychange', visibilityChangeListener);
+  }
+
+  visibilityChangeListener = () => {
+    isTabVisible = !document.hidden;
+    console.log(`🖥️ Tab visibility changed: ${isTabVisible ? 'visible' : 'hidden'}`);
+  };
+
+  document.addEventListener('visibilitychange', visibilityChangeListener);
+  
+  // Set initial state
+  isTabVisible = !document.hidden;
+  console.log(`🖥️ Initial tab visibility: ${isTabVisible ? 'visible' : 'hidden'}`);
+};
+
+// Clean up tab visibility listener
+export const cleanupTabVisibility = () => {
+  if (visibilityChangeListener) {
+    document.removeEventListener('visibilitychange', visibilityChangeListener);
+    visibilityChangeListener = null;
+  }
+};
+
+// Check if user is currently on Talko tab
+export const isUserOnTalkoTab = () => {
+  return isTabVisible;
+};
+
+// Play notification sound for messages when user is on other tabs
 export const playNotificationSound = () => {
   try {
     console.log("🔊 playNotificationSound called");
     console.log("🔊 Audio enabled:", audioEnabled);
+    console.log("🔊 Tab visible:", isTabVisible);
     
     // Check if audio is enabled
     if (!audioEnabled) {
@@ -154,20 +192,26 @@ export const playNotificationSound = () => {
       return;
     }
 
-    console.log("🔊 Attempting to play notification sound...");
+    // Only play notification.mp3 when user is NOT on Talko tab
+    if (isTabVisible) {
+      console.log("🔇 User is on Talko tab - not playing notification sound");
+      return;
+    }
+
+    console.log("🔊 User is on another tab - playing notification.mp3...");
     
     const audio = new Audio('/notification.mp3');
     audio.volume = 0.7;
     
     // Add event listeners for debugging
-    audio.addEventListener('loadstart', () => console.log("📁 Audio loading started"));
-    audio.addEventListener('canplay', () => console.log("✅ Audio can play"));
-    audio.addEventListener('play', () => console.log("▶️ Audio started playing"));
-    audio.addEventListener('ended', () => console.log("⏹️ Audio finished playing"));
-    audio.addEventListener('error', (e) => console.error("❌ Audio error:", e));
+    audio.addEventListener('loadstart', () => console.log("📁 Notification audio loading started"));
+    audio.addEventListener('canplay', () => console.log("✅ Notification audio can play"));
+    audio.addEventListener('play', () => console.log("▶️ Notification audio started playing"));
+    audio.addEventListener('ended', () => console.log("⏹️ Notification audio finished playing"));
+    audio.addEventListener('error', (e) => console.error("❌ Notification audio error:", e));
     
     audio.play().catch(error => {
-      console.error("❌ Audio play failed:", error);
+      console.error("❌ Notification audio play failed:", error);
       
       // Try alternative notification methods
       if ('Notification' in window && Notification.permission === 'granted') {
@@ -178,6 +222,45 @@ export const playNotificationSound = () => {
       }
     });
   } catch (error) {
-    console.error("❌ Error creating audio:", error);
+    console.error("❌ Error creating notification audio:", error);
+  }
+};
+
+// Play confirm sound for messages when user is in the same chat
+export const playConfirmSound = () => {
+  try {
+    console.log("🔊 playConfirmSound called");
+    console.log("🔊 Audio enabled:", audioEnabled);
+    console.log("🔊 Tab visible:", isTabVisible);
+    
+    // Check if audio is enabled
+    if (!audioEnabled) {
+      console.log("⚠️ Audio not yet enabled - waiting for user interaction");
+      return;
+    }
+
+    // Only play confirm.wav when user is on Talko tab (in active chat)
+    if (!isTabVisible) {
+      console.log("🔇 User is not on Talko tab - not playing confirm sound");
+      return;
+    }
+
+    console.log("🔊 User is in active chat - playing Confirm.wav...");
+    
+    const audio = new Audio('/Confirm.wav');
+    audio.volume = 0.5; // Slightly lower volume for in-chat notifications
+    
+    // Add event listeners for debugging
+    audio.addEventListener('loadstart', () => console.log("📁 Confirm audio loading started"));
+    audio.addEventListener('canplay', () => console.log("✅ Confirm audio can play"));
+    audio.addEventListener('play', () => console.log("▶️ Confirm audio started playing"));
+    audio.addEventListener('ended', () => console.log("⏹️ Confirm audio finished playing"));
+    audio.addEventListener('error', (e) => console.error("❌ Confirm audio error:", e));
+    
+    audio.play().catch(error => {
+      console.error("❌ Confirm audio play failed:", error);
+    });
+  } catch (error) {
+    console.error("❌ Error creating confirm audio:", error);
   }
 };

@@ -6,6 +6,10 @@ import {
   getUserDisplayName,
   getUserProfilePic,
   playNotificationSound,
+  playConfirmSound,
+  isUserOnTalkoTab,
+  initializeTabVisibility,
+  cleanupTabVisibility,
 } from "../lib/utils.js";
 
 export const useChatStore = create((set, get) => ({
@@ -102,7 +106,7 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // NEW: Global notification listener - should be called once when app initializes
+  // Enhanced global notification listener with proper sound handling
   setupGlobalNotifications: () => {
     const socket = useAuthStore.getState().socket;
     
@@ -113,6 +117,9 @@ export const useChatStore = create((set, get) => ({
 
     console.log("🔧 Setting up global notification listener...");
 
+    // Initialize tab visibility tracking
+    initializeTabVisibility();
+
     // Listen for messageReceived event globally (not tied to selected user)
     socket.on("messageReceived", (messageData) => {
       const authUser = useAuthStore.getState().authUser;
@@ -122,22 +129,27 @@ export const useChatStore = create((set, get) => ({
         messageReceiverId: messageData.receiverId,
         authUserId: authUser?._id,
         selectedUserId: selectedUser?._id,
-        messageSenderId: messageData.senderId
+        messageSenderId: messageData.senderId,
+        isUserOnTalko: isUserOnTalkoTab()
       });
 
-      // Only play sound if:
-      // 1. The current user is the receiver
-      // 2. The message is NOT from the currently selected user (to avoid sound on active chat)
+      // Only proceed if the current user is the receiver
       if (messageData.receiverId === authUser?._id) {
-        // Don't play sound if user is actively chatting with the sender
-        if (!selectedUser || selectedUser._id !== messageData.senderId) {
-          console.log("🎵 Playing notification sound...");
-          playNotificationSound();
+        
+        // Check if user is currently chatting with the sender
+        const isChattingWithSender = selectedUser && selectedUser._id === messageData.senderId;
+        
+        if (isChattingWithSender) {
+          // User is in the same chat - play confirm sound (only if on Talko tab)
+          console.log("💬 User is in same chat - playing confirm sound");
+          playConfirmSound();
         } else {
-          console.log("🔇 Not playing sound - currently chatting with sender");
+          // User is not in the same chat - play notification sound (only if on other tab)
+          console.log("🔔 User is not in same chat - playing notification sound");
+          playNotificationSound();
         }
       } else {
-        console.log("❌ Not playing sound - not the receiver");
+        console.log("❌ Not playing any sound - not the receiver");
       }
     });
   },
@@ -149,6 +161,9 @@ export const useChatStore = create((set, get) => ({
       console.log("🧹 Cleaning up global notification listener...");
       socket.off("messageReceived");
     }
+    
+    // Clean up tab visibility tracking
+    cleanupTabVisibility();
   },
 
   listenToMessages: () => {
