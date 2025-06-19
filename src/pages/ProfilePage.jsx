@@ -1,13 +1,25 @@
 import React, { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User } from "lucide-react";
+import { Camera, Mail, User, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
-  const { authUser, isCheckingAuth, isUpdatingProfile, updateProfile } =
-    useAuthStore();
+  const { 
+    authUser, 
+    isCheckingAuth, 
+    isUpdatingProfile, 
+    updateProfile,
+    deleteAccount,
+    logout
+  } = useAuthStore();
+  
   const [selectedImage, setSelectedImage] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
 
-  // Function to compress image
   const compressImage = (file, maxWidth = 800, quality = 0.8) => {
     return new Promise((resolve) => {
       const canvas = document.createElement("canvas");
@@ -15,12 +27,10 @@ const ProfilePage = () => {
       const img = new Image();
 
       img.onload = () => {
-        // Calculate new dimensions
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
         canvas.width = img.width * ratio;
         canvas.height = img.height * ratio;
 
-        // Draw and compress
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(resolve, "image/jpeg", quality);
       };
@@ -34,21 +44,38 @@ const ProfilePage = () => {
     if (!file) return;
 
     try {
-      // Compress the image first
       const compressedFile = await compressImage(file);
-
       const reader = new FileReader();
       reader.readAsDataURL(compressedFile);
 
       reader.onload = async () => {
         const base64Image = reader.result;
         setSelectedImage(base64Image);
-
-        // Send only the base64 part (without data:image/jpeg;base64,)
         await updateProfile({ profilePic: base64Image });
       };
     } catch (error) {
       console.error("Error processing image:", error);
+      toast.error("Failed to update profile picture");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!password) {
+      toast.error("Please enter your password to confirm account deletion");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteAccount(password);
+      setIsDeleteModalOpen(false);
+      toast.success("Account deleted successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+      toast.error(error.message || "Account deletion failed. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -58,7 +85,7 @@ const ProfilePage = () => {
         <div className="bg-base-300 rounded-xl p-6 space-y-8">
           <div className="text-center">
             <h1 className="text-2xl font-semibold">Profile</h1>
-            <p className="mt-2">Profile Information</p>
+            <p className="mt-2">Manage your account information</p>
           </div>
 
           {/* AVATAR or PROFILE PIC */}
@@ -108,7 +135,7 @@ const ProfilePage = () => {
             <div className="space-y-1.5">
               <div className="text-sm text-zinc-400 flex items-center gap-2">
                 <Mail className="size-4" />
-                Email Address{" "}
+                Email Address
               </div>
               <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
                 {authUser?.email}
@@ -118,11 +145,11 @@ const ProfilePage = () => {
 
           {/* Additional Info */}
           <div className="mt-6 bg-base-300 rounded-xl p-6">
-            <h2 className="text-lg font-medium mb-4"> Account Information</h2>
+            <h2 className="text-lg font-medium mb-4">Account Information</h2>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-zinc-700">
-                <span>Member Since: </span>
-                <span>{authUser.createdAt?.split("T")[0]}</span>
+                <span>Member Since:</span>
+                <span>{new Date(authUser.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span>Account Status:</span>
@@ -130,9 +157,66 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Delete Account Button */}
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
+            >
+              <Trash2 className="size-5" />
+              Delete Account
+            </button>
+          </div>
         </div>
       </div>
-      <p className="text-center text-sm text-base-content/60 font-medium tracking-wide">
+      
+      {/* Delete Account Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-base-200 rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold text-red-500 mb-4">Delete Account</h2>
+            <p className="mb-4 text-base-content">
+              This action will permanently delete your account and all associated data. 
+              This cannot be undone.
+            </p>
+            
+            <div className="mb-4">
+              <label className="block mb-2 text-base-content">
+                Enter your password to confirm:
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg bg-base-100 text-base-content"
+                placeholder="Your password"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 border rounded-lg hover:bg-base-300 text-base-content"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                className={`px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ${
+                  isDeleting ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <p className="text-center text-sm text-base-content/60 font-medium tracking-wide mt-8">
         Created with ❤️ by{" "}
         <a
           href="https://github.com/MrHussnainAhmad/Talko-WEB-frontend-v1"

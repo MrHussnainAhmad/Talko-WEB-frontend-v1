@@ -15,6 +15,9 @@ export const useAuthStore = create((set, get) => ({
   outgoingRequests: [],
   friends: [],
   isLoadingRequests: false,
+  isResendingVerification: false,
+  verificationEmail: null,
+  isDeletingAccount: false,
 
   checkAuth: async () => {
     try {
@@ -33,10 +36,16 @@ export const useAuthStore = create((set, get) => ({
     set({ isSignup: true });
     try {
       const response = await axiosInstance.post("/auth/signup", data);
-      set({ authUser: response.data.user || response.data });
-      toast.success("Account created successfully!");
-      get().connectSocket();
-      return { success: true };
+      
+      set({ verificationEmail: data.email });
+      
+      toast.success("Account created successfully! Please check your email to verify your account.");
+      
+      return { 
+        success: true, 
+        requiresVerification: true,
+        message: "Account created successfully! Please check your email to verify your account."
+      };
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Signup failed";
       toast.error(errorMessage);
@@ -54,17 +63,24 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const response = await axiosInstance.post("/auth/login", data);
-      set({ authUser: response.data });
+      set({ authUser: response.data, verificationEmail: null });
       toast.success("Logged in successfully!");
       get().connectSocket();
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Login failed";
+      const requiresVerification = error.response?.data?.requiresVerification || false;
+      
+      if (requiresVerification) {
+        set({ verificationEmail: data.email });
+      }
+      
       toast.error(errorMessage);
       console.error("Error in login:", error);
       return {
         success: false,
         message: errorMessage,
+        requiresVerification,
       };
     } finally {
       set({ isLoggingIn: false });
@@ -78,7 +94,8 @@ export const useAuthStore = create((set, get) => ({
         authUser: null,
         incomingRequests: [],
         outgoingRequests: [],
-        friends: []
+        friends: [],
+        verificationEmail: null
       });
       toast.success("Logged out successfully!");
       get().disconnectSocket();
@@ -86,6 +103,62 @@ export const useAuthStore = create((set, get) => ({
       toast.error("Logout failed");
       console.error("Error logging out:", error);
     }
+  },
+
+  resendVerificationEmail: async (email) => {
+    set({ isResendingVerification: true });
+    try {
+      const emailToUse = email || get().verificationEmail;
+      
+      if (!emailToUse) {
+        toast.error("Email address not found");
+        return { success: false, message: "Email address not found" };
+      }
+
+      await axiosInstance.post("/auth/resend-verification", { 
+        email: emailToUse 
+      });
+      
+      toast.success("Verification email sent! Please check your inbox.");
+      return { 
+        success: true, 
+        message: "Verification email sent successfully" 
+      };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to resend verification email";
+      toast.error(errorMessage);
+      console.error("Error resending verification:", error);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    } finally {
+      set({ isResendingVerification: false });
+    }
+  },
+
+  verifyEmail: async (token) => {
+    try {
+      const response = await axiosInstance.get(`/auth/verify-email/${token}`);
+      toast.success("Email verified successfully! You can now log in.");
+      set({ verificationEmail: null });
+      return { 
+        success: true, 
+        message: "Email verified successfully! You can now log in." 
+      };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Email verification failed";
+      toast.error(errorMessage);
+      console.error("Error verifying email:", error);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  },
+
+  clearVerificationEmail: () => {
+    set({ verificationEmail: null });
   },
 
   updateProfile: async (data) => {
@@ -103,6 +176,31 @@ export const useAuthStore = create((set, get) => ({
       return { success: false, message: errorMessage };
     } finally {
       set({ isUpdatingProfile: false });
+    }
+  },
+
+  deleteAccount: async (password) => {
+    set({ isDeletingAccount: true });
+    try {
+      await axiosInstance.delete("/auth/delete-account", {
+        data: { password }
+      });
+      
+      set({ 
+        authUser: null,
+        incomingRequests: [],
+        outgoingRequests: [],
+        friends: [],
+        verificationEmail: null
+      });
+      
+      get().disconnectSocket();
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Account deletion failed";
+      throw new Error(errorMessage);
+    } finally {
+      set({ isDeletingAccount: false });
     }
   },
 
@@ -179,6 +277,25 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  cancelFriendRequest: async (requestId) => {
+    try {
+      await axiosInstance.delete(`/friends/cancel/${requestId}`);
+      
+      const socket = get().socket;
+      if (socket) {
+        socket.emit("friendRequestCancelled", { requestId });
+      }
+      
+      toast.success("Friend request cancelled");
+      get().getOutgoingRequests();
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to cancel request";
+      toast.error(errorMessage);
+      return { success: false };
+    }
+  },
+
   getIncomingRequests: async () => {
     set({ isLoadingRequests: true });
     try {
@@ -215,7 +332,7 @@ export const useAuthStore = create((set, get) => ({
       
       const socket = get().socket;
       if (socket) {
-        socket.emit("friendRemoved", {
+        socket.emit("friendshipEnded", {
           friendId,
           userId: get().authUser._id
         });
@@ -295,13 +412,40 @@ export const useAuthStore = create((set, get) => ({
       get().getOutgoingRequests();
     });
 
-    socket.on("friendRemoved", (data) => {
-      toast.info(data.message);
+    socket.on("friendRequestCancelled", (data) => {
+      toast.info("Friend request cancelled");
+      get().getIncomingRequests();
+      get().getOutgoingRequests();
+    });
+
+    socket.on("friendshipEnded", (data) => {
+      toast.info(data.message || "Friendship ended");
       get().getFriends();
     });
 
     socket.on("userStatusUpdate", (data) => {
       console.log('User status update:', data);
+    });
+
+    socket.on('chatDeleted', (data) => {
+      toast.info(data.message);
+      get().getFriends();
+    });
+
+    socket.on("userAccountDeleted", (data) => {
+      const { deletedUserId } = data;
+      
+      set(state => ({
+        friends: state.friends.filter(friend => friend._id !== deletedUserId),
+        incomingRequests: state.incomingRequests.filter(
+          req => req.senderId._id !== deletedUserId
+        ),
+        outgoingRequests: state.outgoingRequests.filter(
+          req => req.receiverId._id !== deletedUserId
+        )
+      }));
+      
+      toast.info(`A user has deleted their account`);
     });
 
     socket.on('error', (error) => {

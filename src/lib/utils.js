@@ -41,6 +41,7 @@ export function formatRelativeTime(date) {
 }
 
 export function truncateText(text, maxLength = 50) {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
 }
@@ -55,6 +56,7 @@ export function validatePassword(password) {
 }
 
 export function getInitials(name) {
+    if (!name) return "";
     return name
         .split(' ')
         .map(word => word.charAt(0))
@@ -73,4 +75,39 @@ export function debounce(func, delay) {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
+}
+
+// Handle deleted users in UI
+export function getUserDisplayName(user, onlineUsers = []) {
+  if (!user) return "Unknown User";
+  
+  if (user.isDeleted) {
+    return "Talko User";
+  }
+  
+  return user.fullname || "Unknown User";
+}
+
+export function getUserProfilePic(user) {
+  if (!user) return "";
+  
+  if (user.isDeleted) {
+    return "";
+  }
+  
+  return user.profilePic || "";
+}
+
+export function isAccountDeleted(user) {
+  return user && user.isDeleted === true;
+}
+
+export function formatUserForDisplay(user) {
+  if (!user) return null;
+  
+  return {
+    ...user,
+    fullname: getUserDisplayName(user),
+    profilePic: getUserProfilePic(user)
+  };
 }

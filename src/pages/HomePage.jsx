@@ -13,7 +13,8 @@ import {
   Search,
   ArrowLeft,
   Clock,
-  UserCheck
+  UserCheck,
+  XCircle
 } from 'lucide-react'
 
 const HomePage = () => {
@@ -27,6 +28,7 @@ const HomePage = () => {
     getFriends,
     acceptFriendRequest,
     rejectFriendRequest,
+    cancelFriendRequest,
     sendFriendRequest,
     searchUsers,
     isLoadingRequests
@@ -73,6 +75,10 @@ const HomePage = () => {
 
   const handleRejectRequest = async (requestId) => {
     await rejectFriendRequest(requestId);
+  };
+
+  const handleCancelRequest = async (requestId) => {
+    await cancelFriendRequest(requestId);
   };
 
   const handleSendRequest = async (userId, message = '') => {
@@ -132,6 +138,16 @@ const HomePage = () => {
                 {incomingRequests.length}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab('outgoing')}
+            className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors relative ${
+              activeTab === 'outgoing' 
+                ? 'bg-base-100 shadow-sm font-medium' 
+                : 'hover:bg-base-300'
+            }`}
+          >
+            Sent ({outgoingRequests.length})
           </button>
           <button
             onClick={() => setActiveTab('search')}
@@ -239,20 +255,36 @@ const HomePage = () => {
               </div>
             ) : (
               outgoingRequests.map((request) => (
-                <div key={request._id} className="flex items-center gap-3 p-3 rounded-lg bg-base-200">
-                  <div className="avatar">
-                    <div className="size-10 rounded-full">
-                      <img 
-                        src={request.receiverId.profilePic || '/Profile.png'} 
-                        alt={request.receiverId.fullname} 
-                      />
+                <div key={request._id} className="p-3 rounded-lg bg-base-200 border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="avatar">
+                      <div className="size-10 rounded-full">
+                        <img 
+                          src={request.receiverId.profilePic || '/Profile.png'} 
+                          alt={request.receiverId.fullname} 
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{request.receiverId.fullname}</h4>
+                      <p className="text-sm text-base-content/70">@{request.receiverId.username}</p>
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">{request.receiverId.fullname}</h4>
-                    <p className="text-sm text-base-content/70">@{request.receiverId.username}</p>
-                  </div>
-                  <div className="text-xs text-warning font-medium">Pending</div>
+                  
+                  {request.message && (
+                    <p className="text-sm mb-3 p-2 bg-base-100 rounded italic">
+                      "{request.message}"
+                    </p>
+                  )}
+                  
+                  <button
+                    onClick={() => handleCancelRequest(request._id)}
+                    className="btn btn-error btn-sm w-full"
+                    disabled={isLoadingRequests}
+                  >
+                    <XCircle className="size-4" />
+                    Cancel Request
+                  </button>
                 </div>
               ))
             )}
@@ -308,9 +340,12 @@ const HomePage = () => {
                         </span>
                       )}
                       {user.relationshipStatus === 'received' && (
-                        <span className="text-xs bg-info text-info-content px-2 py-1 rounded-full">
-                          Received
-                        </span>
+                        <button
+                          onClick={() => handleAcceptRequest(user._id)}
+                          className="btn btn-success btn-xs"
+                        >
+                          Accept
+                        </button>
                       )}
                       {user.relationshipStatus === 'none' && (
                         <button
@@ -353,7 +388,7 @@ const HomePage = () => {
               >
                 <div className="relative">
                   <Users className="size-6" />
-                  {incomingRequests.length > 0 && (
+                  {(incomingRequests.length > 0) && (
                     <span className="absolute -top-2 -right-2 bg-error text-white text-xs rounded-full size-5 flex items-center justify-center">
                       {incomingRequests.length}
                     </span>

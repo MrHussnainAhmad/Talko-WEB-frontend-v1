@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
 import { useAuthStore } from "./useAuthStore.js";
+import { getUserDisplayName, getUserProfilePic } from "../lib/utils.js";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -10,6 +11,7 @@ export const useChatStore = create((set, get) => ({
   isUsersLoading: false,
   isMessagesLoading: false,
   typingUsers: [],
+  messageCounts: {},
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -39,17 +41,57 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  getMessageCount: async (userId) => {
+    try {
+      const res = await axiosInstance.get(`/messages/count/${userId}`);
+      set(state => ({
+        messageCounts: {
+          ...state.messageCounts,
+          [userId]: res.data.messageCount
+        }
+      }));
+    } catch (error) {
+      console.error("Failed to get message count:", error);
+    }
+  },
+
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     try {
       const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-      set({ messages: [...messages, res.data] });
+      
+      set(state => ({
+        messages: [...messages, res.data],
+        messageCounts: {
+          ...state.messageCounts,
+          [selectedUser._id]: (state.messageCounts[selectedUser._id] || 0) + 1
+        }
+      }));
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error("You can only message friends");
       } else {
         toast.error("Failed to send message");
       }
+    }
+  },
+
+  deleteChatHistory: async (userId) => {
+    try {
+      await axiosInstance.delete(`/messages/privacy/${userId}`);
+      
+      set(state => ({
+        messages: [],
+        messageCounts: {
+          ...state.messageCounts,
+          [userId]: 0
+        }
+      }));
+      
+      toast.success("Chat history deleted for both users");
+    } catch (error) {
+      toast.error("Failed to delete chat history");
+      console.error("Error deleting chat history:", error);
     }
   },
 
@@ -68,16 +110,21 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", (newMessage) => {
       const { selectedUser } = get();
-      if (newMessage.senderId === selectedUser._id) {
+      if (newMessage.senderId === selectedUser._id || 
+          newMessage.receiverId === selectedUser._id) {
         set((state) => ({
           messages: [...state.messages, newMessage],
+          messageCounts: {
+            ...state.messageCounts,
+            [selectedUser._id]: (state.messageCounts[selectedUser._id] || 0) + 1
+          }
         }));
       }
     });
 
     socket.on("userTyping", (data) => {
       const { selectedUser, typingUsers } = get();
-      if (data.senderId === selectedUser._id) {
+      if (data.senderId === selectedUser?._id) {
         if (!typingUsers.includes(data.senderId)) {
           set({ typingUsers: [...typingUsers, data.senderId] });
         }
@@ -90,6 +137,52 @@ export const useChatStore = create((set, get) => ({
         typingUsers: typingUsers.filter(userId => userId !== data.senderId) 
       });
     });
+
+    socket.on("chatDeleted", (data) => {
+      const { selectedUser } = get();
+      if (selectedUser && selectedUser._id === data.deletedUserId) {
+        set({ messages: [], typingUsers: [] });
+        set(state => ({
+          messageCounts: {
+            ...state.messageCounts,
+            [selectedUser._id]: 0
+          }
+        }));
+      }
+    });
+
+    socket.on("userAccountDeleted", (data) => {
+      const { deletedUserId } = data;
+      const { selectedUser } = get();
+      
+      // Update the selected user if they were deleted
+      if (selectedUser && selectedUser._id === deletedUserId) {
+        set({
+          selectedUser: {
+            ...selectedUser,
+            fullname: "Talko User",
+            username: "",
+            profilePic: "",
+            isDeleted: true
+          }
+        });
+      }
+      
+      // Update messages to reflect account deletion
+      set(state => ({
+        messages: state.messages.map(msg => {
+          if (msg.senderId === deletedUserId) {
+            return {
+              ...msg,
+              senderName: "Talko User",
+              senderProfilePic: "",
+              isDeleted: true
+            };
+          }
+          return msg;
+        })
+      }));
+    });
   },
 
   dontListenToMessages: () => {
@@ -98,6 +191,8 @@ export const useChatStore = create((set, get) => ({
       socket.off("newMessage");
       socket.off("userTyping");
       socket.off("userStoppedTyping");
+      socket.off("chatDeleted");
+      socket.off("userAccountDeleted");
     }
   },
 
@@ -126,9 +221,25 @@ export const useChatStore = create((set, get) => ({
 
   setSelectedUser: (selectedUser) => {
     set({ selectedUser, messages: [], typingUsers: [] });
+    if (selectedUser) {
+      get().getMessages(selectedUser._id);
+      get().getMessageCount(selectedUser._id);
+    }
   },
 
   clearMessages: () => {
     set({ messages: [], typingUsers: [] });
+  },
+  
+  clearMessagesWithUser: (userId) => {
+    set(state => ({
+      messages: state.messages.filter(msg => 
+        msg.receiverId !== userId && msg.senderId !== userId
+      ),
+      messageCounts: {
+        ...state.messageCounts,
+        [userId]: 0
+      }
+    }));
   },
 }));
