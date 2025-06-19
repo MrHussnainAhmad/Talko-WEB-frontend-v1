@@ -114,7 +114,7 @@ export function formatUserForDisplay(user) {
 
 export const playNotificationSound = () => {
   try {
-    const audio = new Audio('/notification.wav');
+    const audio = new Audio('/notification.mp3');
     audio.volume = 1; // 30% volume to avoid being too loud
     audio.play().catch(e => console.error("Audio play failed:", e));
   } catch (error) {
