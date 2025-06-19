@@ -7,9 +7,11 @@ import LoginPage from "./pages/LoginPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import { useAuthStore } from "./store/useAuthStore.js";
+import { useChatStore } from "./store/useChatStore.js";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useThemeStore } from "./store/useThemeStore.js";
+import { initializeAudio } from "./utils/audioUtils.js"; // Add this import
 
 const App = () => {
   const {
@@ -22,6 +24,8 @@ const App = () => {
     socket,
     incomingRequests,
   } = useAuthStore();
+  
+  const { setupGlobalNotifications, cleanupGlobalNotifications } = useChatStore();
   const { theme } = useThemeStore();
 
   useEffect(() => {
@@ -87,6 +91,27 @@ const App = () => {
       };
     }
   }, [socket, authUser, getIncomingRequests, getOutgoingRequests, getFriends]);
+
+  // Initialize audio and setup global chat notifications when user is authenticated
+  useEffect(() => {
+    if (authUser && socket) {
+      // Initialize audio system
+      initializeAudio();
+      
+      // Wait a bit for socket to connect, then setup global notifications
+      const timer = setTimeout(() => {
+        setupGlobalNotifications();
+      }, 1000);
+
+      return () => {
+        clearTimeout(timer);
+        cleanupGlobalNotifications();
+      };
+    } else {
+      // Cleanup when user logs out
+      cleanupGlobalNotifications();
+    }
+  }, [authUser, socket, setupGlobalNotifications, cleanupGlobalNotifications]);
 
   // Request notification permission when user logs in
   useEffect(() => {

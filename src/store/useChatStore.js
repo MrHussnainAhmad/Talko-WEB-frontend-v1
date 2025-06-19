@@ -102,6 +102,55 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  // NEW: Global notification listener - should be called once when app initializes
+  setupGlobalNotifications: () => {
+    const socket = useAuthStore.getState().socket;
+    
+    if (!socket) {
+      console.error("Socket is not available for global notifications");
+      return;
+    }
+
+    console.log("🔧 Setting up global notification listener...");
+
+    // Listen for messageReceived event globally (not tied to selected user)
+    socket.on("messageReceived", (messageData) => {
+      const authUser = useAuthStore.getState().authUser;
+      const { selectedUser } = get();
+      
+      console.log("📨 Message received event:", {
+        messageReceiverId: messageData.receiverId,
+        authUserId: authUser?._id,
+        selectedUserId: selectedUser?._id,
+        messageSenderId: messageData.senderId
+      });
+
+      // Only play sound if:
+      // 1. The current user is the receiver
+      // 2. The message is NOT from the currently selected user (to avoid sound on active chat)
+      if (messageData.receiverId === authUser?._id) {
+        // Don't play sound if user is actively chatting with the sender
+        if (!selectedUser || selectedUser._id !== messageData.senderId) {
+          console.log("🎵 Playing notification sound...");
+          playNotificationSound();
+        } else {
+          console.log("🔇 Not playing sound - currently chatting with sender");
+        }
+      } else {
+        console.log("❌ Not playing sound - not the receiver");
+      }
+    });
+  },
+
+  // Clean up global notifications
+  cleanupGlobalNotifications: () => {
+    const socket = useAuthStore.getState().socket;
+    if (socket) {
+      console.log("🧹 Cleaning up global notification listener...");
+      socket.off("messageReceived");
+    }
+  },
+
   listenToMessages: () => {
     const { selectedUser } = get();
     if (!selectedUser) {
@@ -129,20 +178,6 @@ export const useChatStore = create((set, get) => ({
               (state.messageCounts[selectedUser._id] || 0) + 1,
           },
         }));
-      }
-    });
-
-    // Listen for messageReceived event from backend and play notification sound
-    socket.on("messageReceived", (messageData) => {
-      const authUser = useAuthStore.getState().authUser;
-
-      // Only play sound if the current user is the receiver
-      // and the page is not focused (user is on another tab/app)
-      if (messageData.receiverId === authUser?._id) {
-        console.log("🎵 Playing notification sound...");
-        playNotificationSound();
-      } else {
-        console.log("❌ Not playing sound - not the receiver");
       }
     });
 
@@ -213,7 +248,7 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (socket) {
       socket.off("newMessage");
-      socket.off("messageReceived"); // Add this line
+      // Don't remove messageReceived here - it's global
       socket.off("userTyping");
       socket.off("userStoppedTyping");
       socket.off("chatDeleted");

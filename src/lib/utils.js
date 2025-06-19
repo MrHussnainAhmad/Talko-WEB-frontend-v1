@@ -112,12 +112,72 @@ export function formatUserForDisplay(user) {
   };
 }
 
+// Audio context management
+let audioContext = null;
+let audioEnabled = false;
+
+export const initializeAudio = () => {
+  const enableAudio = () => {
+    try {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      audioEnabled = true;
+      console.log("✅ Audio context initialized");
+      
+      // Remove the event listener after first interaction
+      document.removeEventListener('click', enableAudio);
+      document.removeEventListener('touchstart', enableAudio);
+    } catch (error) {
+      console.error("Failed to initialize audio context:", error);
+    }
+  };
+
+  // Listen for first user interaction
+  document.addEventListener('click', enableAudio, { once: true });
+  document.addEventListener('touchstart', enableAudio, { once: true });
+};
+
 export const playNotificationSound = () => {
   try {
+    console.log("🔊 playNotificationSound called");
+    console.log("🔊 Audio enabled:", audioEnabled);
+    
+    // Check if audio is enabled
+    if (!audioEnabled) {
+      console.log("⚠️ Audio not yet enabled - waiting for user interaction");
+      return;
+    }
+
+    console.log("🔊 Attempting to play notification sound...");
+    
     const audio = new Audio('/notification.mp3');
-    audio.volume = 1; // 30% volume to avoid being too loud
-    audio.play().catch(e => console.error("Audio play failed:", e));
+    audio.volume = 0.7;
+    
+    // Add event listeners for debugging
+    audio.addEventListener('loadstart', () => console.log("📁 Audio loading started"));
+    audio.addEventListener('canplay', () => console.log("✅ Audio can play"));
+    audio.addEventListener('play', () => console.log("▶️ Audio started playing"));
+    audio.addEventListener('ended', () => console.log("⏹️ Audio finished playing"));
+    audio.addEventListener('error', (e) => console.error("❌ Audio error:", e));
+    
+    audio.play().catch(error => {
+      console.error("❌ Audio play failed:", error);
+      
+      // Try alternative notification methods
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('New Message', {
+          body: 'You have received a new message',
+          icon: '/favicon.ico'
+        });
+      }
+    });
   } catch (error) {
-    console.error("Error loading audio:", error);
+    console.error("❌ Error creating audio:", error);
   }
 };
