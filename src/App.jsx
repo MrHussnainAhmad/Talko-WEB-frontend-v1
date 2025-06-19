@@ -11,7 +11,7 @@ import { useChatStore } from "./store/useChatStore.js";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useThemeStore } from "./store/useThemeStore.js";
-import { initializeAudio } from "./utils/utils"; // Add this import
+import { initializeAudio } from "./lib/utils.js"; // Add this import
 
 const App = () => {
   const {
