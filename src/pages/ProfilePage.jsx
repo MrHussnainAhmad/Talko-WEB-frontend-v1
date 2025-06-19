@@ -5,15 +5,15 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const ProfilePage = () => {
-  const { 
-    authUser, 
-    isCheckingAuth, 
-    isUpdatingProfile, 
+  const {
+    authUser,
+    isCheckingAuth,
+    isUpdatingProfile,
     updateProfile,
     deleteAccount,
-    logout
+    logout,
   } = useAuthStore();
-  
+
   const [selectedImage, setSelectedImage] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -73,7 +73,9 @@ const ProfilePage = () => {
       navigate("/login");
     } catch (error) {
       console.error("Account deletion failed:", error);
-      toast.error(error.message || "Account deletion failed. Please try again.");
+      toast.error(
+        error.message || "Account deletion failed. Please try again."
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -151,7 +153,7 @@ const ProfilePage = () => {
                 <span>Member Since:</span>
                 <span>{new Date(authUser.createdAt).toLocaleDateString()}</span>
               </div>
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between border-b border-red-700 py-4">
                 <span>Account Status:</span>
                 <span className="text-green-500">Active</span>
               </div>
@@ -159,28 +161,34 @@ const ProfilePage = () => {
           </div>
 
           {/* Delete Account Button */}
-          <div className="mt-8 flex justify-center">
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
-            >
-              <Trash2 className="size-5" />
-              Delete Account
-            </button>
+          <div className="mt-8 ">
+            {/* First Row: span and button */}
+            <div className="flex justify-around items-center">
+              <span className="text-red-500">Account Deletion</span>
+              <button
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
+              >
+                <Trash2 className="size-5" />
+                Delete Account
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      
+
       {/* Delete Account Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-base-200 rounded-xl p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-red-500 mb-4">Delete Account</h2>
+            <h2 className="text-xl font-bold text-red-500 mb-4">
+              Delete Account
+            </h2>
             <p className="mb-4 text-base-content">
-              This action will permanently delete your account and all associated data. 
-              This cannot be undone.
+              This action will permanently delete your account and all
+              associated data. This cannot be undone.
             </p>
-            
+
             <div className="mb-4">
               <label className="block mb-2 text-base-content">
                 Enter your password to confirm:
@@ -193,7 +201,7 @@ const ProfilePage = () => {
                 placeholder="Your password"
               />
             </div>
-            
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
@@ -215,7 +223,7 @@ const ProfilePage = () => {
           </div>
         </div>
       )}
-      
+
       <p className="text-center text-sm text-base-content/60 font-medium tracking-wide mt-8">
         Created with ❤️ by{" "}
         <a
