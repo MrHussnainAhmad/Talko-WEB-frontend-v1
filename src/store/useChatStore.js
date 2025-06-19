@@ -2,7 +2,11 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
 import { useAuthStore } from "./useAuthStore.js";
-import { getUserDisplayName, getUserProfilePic, playNotificationSound } from "../lib/utils.js";
+import {
+  getUserDisplayName,
+  getUserProfilePic,
+  playNotificationSound,
+} from "../lib/utils.js";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -44,11 +48,11 @@ export const useChatStore = create((set, get) => ({
   getMessageCount: async (userId) => {
     try {
       const res = await axiosInstance.get(`/messages/count/${userId}`);
-      set(state => ({
+      set((state) => ({
         messageCounts: {
           ...state.messageCounts,
-          [userId]: res.data.messageCount
-        }
+          [userId]: res.data.messageCount,
+        },
       }));
     } catch (error) {
       console.error("Failed to get message count:", error);
@@ -58,14 +62,17 @@ export const useChatStore = create((set, get) => ({
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-      
-      set(state => ({
+      const res = await axiosInstance.post(
+        `/messages/send/${selectedUser._id}`,
+        messageData
+      );
+
+      set((state) => ({
         messages: [...messages, res.data],
         messageCounts: {
           ...state.messageCounts,
-          [selectedUser._id]: (state.messageCounts[selectedUser._id] || 0) + 1
-        }
+          [selectedUser._id]: (state.messageCounts[selectedUser._id] || 0) + 1,
+        },
       }));
     } catch (error) {
       if (error.response?.status === 403) {
@@ -79,15 +86,15 @@ export const useChatStore = create((set, get) => ({
   deleteChatHistory: async (userId) => {
     try {
       await axiosInstance.delete(`/messages/privacy/${userId}`);
-      
-      set(state => ({
+
+      set((state) => ({
         messages: [],
         messageCounts: {
           ...state.messageCounts,
-          [userId]: 0
-        }
+          [userId]: 0,
+        },
       }));
-      
+
       toast.success("Chat history deleted for both users");
     } catch (error) {
       toast.error("Failed to delete chat history");
@@ -110,14 +117,17 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", (newMessage) => {
       const { selectedUser } = get();
-      if (newMessage.senderId === selectedUser._id || 
-          newMessage.receiverId === selectedUser._id) {
+      if (
+        newMessage.senderId === selectedUser._id ||
+        newMessage.receiverId === selectedUser._id
+      ) {
         set((state) => ({
           messages: [...state.messages, newMessage],
           messageCounts: {
             ...state.messageCounts,
-            [selectedUser._id]: (state.messageCounts[selectedUser._id] || 0) + 1
-          }
+            [selectedUser._id]:
+              (state.messageCounts[selectedUser._id] || 0) + 1,
+          },
         }));
       }
     });
@@ -125,11 +135,14 @@ export const useChatStore = create((set, get) => ({
     // Listen for messageReceived event from backend and play notification sound
     socket.on("messageReceived", (messageData) => {
       const authUser = useAuthStore.getState().authUser;
-      
+
       // Only play sound if the current user is the receiver
       // and the page is not focused (user is on another tab/app)
-      if (messageData.receiverId === authUser?._id && document.hidden) {
+      if (messageData.receiverId === authUser?._id) {
+        console.log("🎵 Playing notification sound...");
         playNotificationSound();
+      } else {
+        console.log("❌ Not playing sound - not the receiver");
       }
     });
 
@@ -144,8 +157,8 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("userStoppedTyping", (data) => {
       const { typingUsers } = get();
-      set({ 
-        typingUsers: typingUsers.filter(userId => userId !== data.senderId) 
+      set({
+        typingUsers: typingUsers.filter((userId) => userId !== data.senderId),
       });
     });
 
@@ -153,11 +166,11 @@ export const useChatStore = create((set, get) => ({
       const { selectedUser } = get();
       if (selectedUser && selectedUser._id === data.deletedUserId) {
         set({ messages: [], typingUsers: [] });
-        set(state => ({
+        set((state) => ({
           messageCounts: {
             ...state.messageCounts,
-            [selectedUser._id]: 0
-          }
+            [selectedUser._id]: 0,
+          },
         }));
       }
     });
@@ -165,7 +178,7 @@ export const useChatStore = create((set, get) => ({
     socket.on("userAccountDeleted", (data) => {
       const { deletedUserId } = data;
       const { selectedUser } = get();
-      
+
       // Update the selected user if they were deleted
       if (selectedUser && selectedUser._id === deletedUserId) {
         set({
@@ -174,24 +187,24 @@ export const useChatStore = create((set, get) => ({
             fullname: "Talko User",
             username: "",
             profilePic: "",
-            isDeleted: true
-          }
+            isDeleted: true,
+          },
         });
       }
-      
+
       // Update messages to reflect account deletion
-      set(state => ({
-        messages: state.messages.map(msg => {
+      set((state) => ({
+        messages: state.messages.map((msg) => {
           if (msg.senderId === deletedUserId) {
             return {
               ...msg,
               senderName: "Talko User",
               senderProfilePic: "",
-              isDeleted: true
+              isDeleted: true,
             };
           }
           return msg;
-        })
+        }),
       }));
     });
   },
@@ -215,7 +228,7 @@ export const useChatStore = create((set, get) => ({
       socket.emit("typing", {
         receiverId,
         senderId: authUser._id,
-        senderName: authUser.fullname
+        senderName: authUser.fullname,
       });
     }
   },
@@ -226,7 +239,7 @@ export const useChatStore = create((set, get) => ({
     if (socket && authUser) {
       socket.emit("stopTyping", {
         receiverId,
-        senderId: authUser._id
+        senderId: authUser._id,
       });
     }
   },
@@ -242,16 +255,16 @@ export const useChatStore = create((set, get) => ({
   clearMessages: () => {
     set({ messages: [], typingUsers: [] });
   },
-  
+
   clearMessagesWithUser: (userId) => {
-    set(state => ({
-      messages: state.messages.filter(msg => 
-        msg.receiverId !== userId && msg.senderId !== userId
+    set((state) => ({
+      messages: state.messages.filter(
+        (msg) => msg.receiverId !== userId && msg.senderId !== userId
       ),
       messageCounts: {
         ...state.messageCounts,
-        [userId]: 0
-      }
+        [userId]: 0,
+      },
     }));
   },
 }));
