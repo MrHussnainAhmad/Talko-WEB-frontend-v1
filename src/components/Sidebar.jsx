@@ -156,6 +156,7 @@ const Sidebar = () => {
             <div className="mb-2">
               {showOnlineOnly ? "No online friends" : "No friends yet"}
             </div>
+            {/* Only show Add Friends button on devices > 650px */}
             <button
               onClick={() => setShowAddFriend(true)}
               className="btn btn-sm btn-primary hidden min-[651px]:flex mx-auto"
