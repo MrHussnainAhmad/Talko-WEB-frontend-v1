@@ -83,7 +83,7 @@ const Sidebar = () => {
           {/* Add Friend Button - Hidden on devices ≤650px, shown on larger screens */}
           <button
             onClick={() => setShowAddFriend(true)}
-            className="btn btn-sm btn-ghost hidden min-[651px]:flex lg:flex"
+            className="btn btn-sm btn-ghost hidden min-[651px]:flex"
             title="Add Friend"
           >
             <UserPlus className="size-4" />
@@ -158,7 +158,7 @@ const Sidebar = () => {
             </div>
             <button
               onClick={() => setShowAddFriend(true)}
-              className="btn btn-sm btn-primary hidden min-[651px]:flex lg:flex mx-auto"
+              className="btn btn-sm btn-primary hidden min-[651px]:flex mx-auto"
             >
               <UserPlus className="size-4" />
               Add Friends
