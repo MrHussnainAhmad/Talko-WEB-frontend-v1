@@ -318,6 +318,16 @@ const Navbar = () => {
                 </>
               )}
             </div>
+            
+            {/* Close Button */}
+            <div className="p-4 border-t border-base-300">
+              <button
+                onClick={closeAddFriendModal}
+                className="btn btn-block btn-ghost"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
