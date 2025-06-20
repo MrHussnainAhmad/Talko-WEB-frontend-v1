@@ -236,7 +236,7 @@ const Navbar = () => {
               </button>
             </div>
 
-            <div className=" pt-[10px] pr-[6px] pb-[6px] pl-[6px] border-b border-base-300">
+            <div className=" pt-[8px] pr-[6px] pb-[6px] pl-[6px] border-b border-base-300">
               <div className="relative">
                 <input
                   type="text"
