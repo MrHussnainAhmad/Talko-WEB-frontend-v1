@@ -193,7 +193,7 @@ const Navbar = () => {
               className="btn btn-sm gap-2 transition-colors"
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden md:inline">Settings</span>
             </a>
             
             {authUser && (
@@ -203,11 +203,11 @@ const Navbar = () => {
                   className="btn btn-sm gap-2 transition-colors"
                 >
                   <User className="size-5" />
-                  <span className="hidden sm:inline">{authUser.fullname}</span>
+                  <span className="hidden md:inline">{authUser.fullname}</span>
                 </a>
 
                 <button className="flex gap-2 items-center" onClick={logout}>
-                  <span className="hidden sm:inline">Logout</span>
+                  <span className="hidden md:inline">Logout</span>
                   <LogOut className="size-5" />
                 </button>
               </>
