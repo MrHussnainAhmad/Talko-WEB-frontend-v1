@@ -251,9 +251,18 @@ const Navbar = () => {
                 placeholder="Search by name, username, or email..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="input input-bordered w-full pl-10"
+                className="input input-bordered w-full pl-10 pr-10"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-zinc-400" />
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchResults([]);
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 btn btn-xs btn-ghost"
+              >
+                <X className="size-3" />
+              </button>
             </div>
 
             {/* Search Results */}
