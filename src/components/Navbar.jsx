@@ -99,7 +99,7 @@ const Navbar = () => {
             {authUser && (
               <button
                 onClick={() => setShowAddFriend(true)}
-                className="btn btn-sm btn-ghost flex max-[650px]:flex min-[651px]:hidden"
+                className="btn btn-sm btn-ghost max-[650px]:flex hidden"
                 title="Add Friend"
               >
                 <UserPlus className="w-4 h-4" />
