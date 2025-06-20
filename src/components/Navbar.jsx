@@ -224,7 +224,7 @@ const Navbar = () => {
       )}
 
       {showAddFriend && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-[60px]">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-[75px]">
           <div className="bg-base-100 text-base-content rounded-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-base-300">
               <h3 className="text-lg font-semibold">Add Friends</h3>
