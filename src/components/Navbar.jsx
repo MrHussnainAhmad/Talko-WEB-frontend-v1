@@ -224,7 +224,7 @@ const Navbar = () => {
       )}
 
       {showAddFriend && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-20">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-[60px]">
           <div className="bg-base-100 text-base-content rounded-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-base-300">
               <h3 className="text-lg font-semibold">Add Friends</h3>
@@ -243,7 +243,7 @@ const Navbar = () => {
                   placeholder="Search by name, username, or email..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="input input-bordered w-full pl-10 pr-10 bg-gray-100"
+                  className="input input-bordered w-full pl-10 pr-10"
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-zinc-400" />
                 {searchQuery && (
