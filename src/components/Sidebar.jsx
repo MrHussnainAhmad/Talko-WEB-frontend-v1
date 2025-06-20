@@ -80,10 +80,10 @@ const Sidebar = () => {
             <span className="font-medium hidden lg:block">Friends</span>
           </div>
           
-          {/* Add Friend Button */}
+          {/* Add Friend Button - Hidden on devices ≤650px, shown on larger screens */}
           <button
             onClick={() => setShowAddFriend(true)}
-            className="btn btn-sm btn-ghost hidden lg:flex"
+            className="btn btn-sm btn-ghost hidden min-[651px]:flex lg:flex"
             title="Add Friend"
           >
             <UserPlus className="size-4" />
@@ -158,7 +158,7 @@ const Sidebar = () => {
             </div>
             <button
               onClick={() => setShowAddFriend(true)}
-              className="btn btn-sm btn-primary hidden lg:flex mx-auto"
+              className="btn btn-sm btn-primary hidden min-[651px]:flex lg:flex mx-auto"
             >
               <UserPlus className="size-4" />
               Add Friends
