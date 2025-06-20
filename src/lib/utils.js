@@ -179,7 +179,7 @@ export const isUserOnTalkoTab = () => {
   return isTabVisible;
 };
 
-// Play notification sound for messages when user is on other tabs
+// Play notification sound for messages when user is on other tabs OR different chat
 export const playNotificationSound = () => {
   try {
     console.log("🔊 playNotificationSound called");
@@ -192,13 +192,7 @@ export const playNotificationSound = () => {
       return;
     }
 
-    // Only play notification.mp3 when user is NOT on Talko tab
-    if (isTabVisible) {
-      console.log("🔇 User is on Talko tab - not playing notification sound");
-      return;
-    }
-
-    console.log("🔊 User is on another tab - playing notification.mp3...");
+    console.log("🔊 Playing notification.mp3...");
     
     const audio = new Audio('/notification.mp3');
     audio.volume = 0.7;
@@ -226,7 +220,7 @@ export const playNotificationSound = () => {
   }
 };
 
-// Play confirm sound for messages when user is in the same chat
+// Play confirm sound for messages when user is in the same chat AND on Talko tab
 export const playConfirmSound = () => {
   try {
     console.log("🔊 playConfirmSound called");
@@ -236,12 +230,6 @@ export const playConfirmSound = () => {
     // Check if audio is enabled
     if (!audioEnabled) {
       console.log("⚠️ Audio not yet enabled - waiting for user interaction");
-      return;
-    }
-
-    // Only play confirm.wav when user is on Talko tab (in active chat)
-    if (!isTabVisible) {
-      console.log("🔇 User is not on Talko tab - not playing confirm sound");
       return;
     }
 

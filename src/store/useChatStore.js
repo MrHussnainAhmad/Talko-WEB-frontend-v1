@@ -106,53 +106,54 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // Enhanced global notification listener with proper sound handling
-  setupGlobalNotifications: () => {
-    const socket = useAuthStore.getState().socket;
+// Enhanced global notification listener with proper sound handling
+setupGlobalNotifications: () => {
+  const socket = useAuthStore.getState().socket;
+  
+  if (!socket) {
+    console.error("Socket is not available for global notifications");
+    return;
+  }
+
+  console.log("🔧 Setting up global notification listener...");
+
+  // Initialize tab visibility tracking
+  initializeTabVisibility();
+
+  // Listen for messageReceived event globally (not tied to selected user)
+  socket.on("messageReceived", (messageData) => {
+    const authUser = useAuthStore.getState().authUser;
+    const { selectedUser } = get();
     
-    if (!socket) {
-      console.error("Socket is not available for global notifications");
-      return;
-    }
-
-    console.log("🔧 Setting up global notification listener...");
-
-    // Initialize tab visibility tracking
-    initializeTabVisibility();
-
-    // Listen for messageReceived event globally (not tied to selected user)
-    socket.on("messageReceived", (messageData) => {
-      const authUser = useAuthStore.getState().authUser;
-      const { selectedUser } = get();
-      
-      console.log("📨 Message received event:", {
-        messageReceiverId: messageData.receiverId,
-        authUserId: authUser?._id,
-        selectedUserId: selectedUser?._id,
-        messageSenderId: messageData.senderId,
-        isUserOnTalko: isUserOnTalkoTab()
-      });
-
-      // Only proceed if the current user is the receiver
-      if (messageData.receiverId === authUser?._id) {
-        
-        // Check if user is currently chatting with the sender
-        const isChattingWithSender = selectedUser && selectedUser._id === messageData.senderId;
-        
-        if (isChattingWithSender) {
-          // User is in the same chat - play confirm sound (only if on Talko tab)
-          console.log("💬 User is in same chat - playing confirm sound");
-          playConfirmSound();
-        } else {
-          // User is not in the same chat - play notification sound (only if on other tab)
-          console.log("🔔 User is not in same chat - playing notification sound");
-          playNotificationSound();
-        }
-      } else {
-        console.log("❌ Not playing any sound - not the receiver");
-      }
+    console.log("📨 Message received event:", {
+      messageReceiverId: messageData.receiverId,
+      authUserId: authUser?._id,
+      selectedUserId: selectedUser?._id,
+      messageSenderId: messageData.senderId,
+      isUserOnTalko: isUserOnTalkoTab()
     });
-  },
+
+    // Only proceed if the current user is the receiver
+    if (messageData.receiverId === authUser?._id) {
+      
+      // Check if user is currently chatting with the sender
+      const isChattingWithSender = selectedUser && selectedUser._id === messageData.senderId;
+      const isOnTalkoTab = isUserOnTalkoTab();
+      
+      if (isChattingWithSender && isOnTalkoTab) {
+        // Same chat + on Talko tab = Confirm.wav
+        console.log("💬 User is in same chat and on Talko tab - playing confirm sound");
+        playConfirmSound();
+      } else {
+        // Different chat OR on other tab = notification.mp3
+        console.log("🔔 Different chat or on other tab - playing notification sound");
+        playNotificationSound();
+      }
+    } else {
+      console.log("❌ Not playing any sound - not the receiver");
+    }
+  });
+},
 
   // Clean up global notifications
   cleanupGlobalNotifications: () => {
