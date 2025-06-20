@@ -61,6 +61,17 @@ const Sidebar = () => {
     }
   };
 
+  const closeAddFriendModal = () => {
+    setShowAddFriend(false);
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
   // Safely handle undefined arrays
   const safeOnlineUsers = onlineUsers || [];
   const safeFriends = friends || [];
@@ -173,15 +184,11 @@ const Sidebar = () => {
       {/* Add Friend Modal */}
       {showAddFriend && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-base-100 rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-base-100 rounded-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-base-300">
               <h3 className="text-lg font-semibold">Add Friends</h3>
               <button
-                onClick={() => {
-                  setShowAddFriend(false);
-                  setSearchQuery("");
-                  setSearchResults([]);
-                }}
+                onClick={closeAddFriendModal}
                 className="btn btn-sm btn-ghost"
               >
                 <X className="size-4" />
@@ -189,19 +196,29 @@ const Sidebar = () => {
             </div>
 
             {/* Search Input */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search by name, username, or email..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="input input-bordered w-full pl-10"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-zinc-400" />
+            <div className="p-6 border-b border-base-300">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by name, username, or email..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="input input-bordered w-full pl-10 pr-10"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-zinc-400" />
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 btn btn-xs btn-ghost"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Search Results */}
-            <div className="max-h-60 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-6">
               {isSearching && (
                 <div className="flex justify-center py-4">
                   <div className="loading loading-spinner loading-sm"></div>
@@ -209,7 +226,7 @@ const Sidebar = () => {
               )}
 
               {!isSearching && searchResults.map((user) => (
-                <div key={user._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded">
+                <div key={user._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded mb-2 last:mb-0">
                   <div className="flex items-center gap-3">
                     <img
                       src={user.profilePic || "/avatar.png"}
