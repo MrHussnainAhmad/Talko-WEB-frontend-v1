@@ -305,7 +305,7 @@ const Navbar = () => {
                   ))}
 
                   {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
-                    <div className="text-center text-zinc-500 py-4">
+                    <div className="text-center text-zinc-500 py-8">
                       No users found
                     </div>
                   )}
