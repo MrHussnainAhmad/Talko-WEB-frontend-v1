@@ -23,30 +23,21 @@ const Navbar = () => {
   useEffect(() => {
     if (authUser) {
       getIncomingRequests();
-      // Poll for new requests every 30 seconds
       const interval = setInterval(getIncomingRequests, 30000);
       return () => clearInterval(interval);
     }
   }, [authUser, getIncomingRequests]);
 
-  // Friend request functions
   const handleAcceptRequest = async (requestId) => {
     const result = await acceptFriendRequest(requestId);
-    if (result.success) {
-      // Refresh incoming requests
-      getIncomingRequests();
-    }
+    if (result.success) getIncomingRequests();
   };
 
   const handleRejectRequest = async (requestId) => {
     const result = await rejectFriendRequest(requestId);
-    if (result.success) {
-      // Refresh incoming requests
-      getIncomingRequests();
-    }
+    if (result.success) getIncomingRequests();
   };
 
-  // Add friend functions (for mobile)
   const handleSearch = async (query) => {
     setSearchQuery(query);
     if (query.trim().length < 2) {
@@ -68,7 +59,6 @@ const Navbar = () => {
   const handleSendRequest = async (userId) => {
     const result = await sendFriendRequest(userId);
     if (result.success) {
-      // Update search results to reflect the new status
       const updatedResults = searchResults.map(user => 
         user._id === userId 
           ? { ...user, relationshipStatus: 'sent' }
@@ -91,7 +81,7 @@ const Navbar = () => {
 
   return (
     <header className="bg-gray-900 border-b border-gray-700 fixed w-full top-0 z-40 backdrop-blur-lg text-white">
-      <div className="container mx-auto px-12 h-16">
+      <div className="container mx-auto px-4 sm:px-12 h-16">
         <div className="flex items-center justify-between h-full">
           <div className="flex items-center gap-8">
             <a
@@ -101,23 +91,21 @@ const Navbar = () => {
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-primary" />
               </div>
-              <h1 className="text-lg font-bold">Talko</h1>
+              <h1 className="text-lg font-bold hidden sm:block">Talko</h1>
             </a>
           </div>
 
-          <div className="flex items-center gap-6">
-            {/* Add Friend Button - Only shown on devices ≤650px */}
+          <div className="flex items-center gap-4 sm:gap-6">
             {authUser && (
               <button
                 onClick={() => setShowAddFriend(true)}
-                className="btn btn-sm btn-ghost flex max-[650px]:flex min-[651px]:hidden"
+                className="btn btn-sm btn-ghost flex md:hidden"
                 title="Add Friend"
               >
                 <UserPlus className="w-4 h-4" />
               </button>
             )}
 
-            {/* Friend Request Notifications */}
             {authUser && (
               <div className="relative">
                 <button
@@ -133,7 +121,6 @@ const Navbar = () => {
                   )}
                 </button>
 
-                {/* Notifications Dropdown */}
                 {showNotifications && (
                   <div className="absolute right-0 top-full mt-2 w-80 bg-base-100 text-base-content rounded-lg shadow-xl border border-base-300 z-50">
                     <div className="p-4 border-b border-base-300">
@@ -229,7 +216,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Click outside to close notifications */}
       {showNotifications && (
         <div
           className="fixed inset-0 z-30"
@@ -237,7 +223,6 @@ const Navbar = () => {
         />
       )}
 
-      {/* Add Friend Modal (for mobile) */}
       {showAddFriend && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-base-100 text-base-content rounded-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
@@ -251,7 +236,6 @@ const Navbar = () => {
               </button>
             </div>
 
-            {/* Search Input */}
             <div className="p-6 border-b border-base-300">
               <div className="relative">
                 <input
@@ -273,64 +257,65 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Search Results */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {isSearching && (
+            <div className="flex-1 overflow-y-auto">
+              {isSearching ? (
                 <div className="flex justify-center py-4">
                   <div className="loading loading-spinner loading-sm"></div>
                 </div>
-              )}
-
-              {!isSearching && searchResults.map((user) => (
-                <div key={user._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded mb-2 last:mb-0">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={user.profilePic || "/avatar.png"}
-                      alt={user.fullname}
-                      className="size-10 rounded-full"
-                    />
-                    <div>
-                      <div className="font-medium">{user.fullname}</div>
-                      <div className="text-sm text-zinc-400">@{user.username}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    {user.relationshipStatus === 'friends' && (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <UserCheck className="size-4" />
-                        <span className="text-sm">Friends</span>
+              ) : (
+                <>
+                  {searchResults.map((user) => (
+                    <div key={user._id} className="flex items-center justify-between p-3 hover:bg-base-200">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={user.profilePic || "/avatar.png"}
+                          alt={user.fullname}
+                          className="size-10 rounded-full"
+                        />
+                        <div>
+                          <div className="font-medium">{user.fullname}</div>
+                          <div className="text-sm text-zinc-400">@{user.username}</div>
+                        </div>
                       </div>
-                    )}
-                    {user.relationshipStatus === 'sent' && (
-                      <span className="text-sm text-zinc-500">Request Sent</span>
-                    )}
-                    {user.relationshipStatus === 'received' && (
-                      <span className="text-sm text-blue-600">Pending</span>
-                    )}
-                    {user.relationshipStatus === 'none' && (
-                      <button
-                        onClick={() => handleSendRequest(user._id)}
-                        className="btn btn-sm btn-primary"
-                      >
-                        <UserPlus className="size-4" />
-                        Add
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
 
-              {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
-                <div className="text-center text-zinc-500 py-4">
-                  No users found
-                </div>
-              )}
+                      <div>
+                        {user.relationshipStatus === 'friends' && (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <UserCheck className="size-4" />
+                            <span className="text-sm">Friends</span>
+                          </div>
+                        )}
+                        {user.relationshipStatus === 'sent' && (
+                          <span className="text-sm text-zinc-500">Request Sent</span>
+                        )}
+                        {user.relationshipStatus === 'received' && (
+                          <span className="text-sm text-blue-600">Pending</span>
+                        )}
+                        {user.relationshipStatus === 'none' && (
+                          <button
+                            onClick={() => handleSendRequest(user._id)}
+                            className="btn btn-sm btn-primary"
+                          >
+                            <UserPlus className="size-4" />
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
 
-              {searchQuery.length < 2 && (
-                <div className="text-center text-zinc-400 py-4">
-                  Enter at least 2 characters to search
-                </div>
+                  {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                    <div className="text-center text-zinc-500 py-4">
+                      No users found
+                    </div>
+                  )}
+
+                  {searchQuery.length < 2 && (
+                    <div className="text-center text-zinc-400 py-4">
+                      Enter at least 2 characters to search
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

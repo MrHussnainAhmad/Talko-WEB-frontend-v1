@@ -29,7 +29,6 @@ const Sidebar = () => {
     getIncomingRequests();
   }, [getUsers, getFriends, getIncomingRequests]);
 
-  // Search functionality
   const handleSearch = async (query) => {
     setSearchQuery(query);
     if (query.trim().length < 2) {
@@ -51,7 +50,6 @@ const Sidebar = () => {
   const handleSendRequest = async (userId) => {
     const result = await sendFriendRequest(userId);
     if (result.success) {
-      // Update search results to reflect the new status
       const updatedResults = searchResults.map(user => 
         user._id === userId 
           ? { ...user, relationshipStatus: 'sent' }
@@ -72,7 +70,6 @@ const Sidebar = () => {
     setSearchResults([]);
   };
 
-  // Safely handle undefined arrays
   const safeOnlineUsers = onlineUsers || [];
   const safeFriends = friends || [];
 
@@ -91,17 +88,15 @@ const Sidebar = () => {
             <span className="font-medium hidden lg:block">Friends</span>
           </div>
           
-          {/* Add Friend Button - Hidden on devices ≤650px, shown on larger screens */}
           <button
             onClick={() => setShowAddFriend(true)}
-            className="btn btn-sm btn-ghost hidden min-[651px]:flex"
+            className="btn btn-sm btn-ghost hidden md:flex"
             title="Add Friend"
           >
             <UserPlus className="size-4" />
           </button>
         </div>
 
-        {/* Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
             <input
@@ -117,7 +112,6 @@ const Sidebar = () => {
           </span>
         </div>
 
-        {/* Friend Request Notification */}
         {incomingRequests.length > 0 && (
           <div className="mt-2 hidden lg:block">
             <div className="text-xs text-primary font-medium">
@@ -167,8 +161,7 @@ const Sidebar = () => {
             <div className="mb-2">
               {showOnlineOnly ? "No online friends" : "No friends yet"}
             </div>
-            {/* Add Friends button - only show on screens wider than 650px */}
-            <div className="hidden min-[651px]:block">
+            <div className="hidden md:block">
               <button
                 onClick={() => setShowAddFriend(true)}
                 className="btn btn-sm btn-primary flex mx-auto"
@@ -181,7 +174,6 @@ const Sidebar = () => {
         )}
       </div>
 
-      {/* Add Friend Modal */}
       {showAddFriend && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-base-100 rounded-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
@@ -195,7 +187,6 @@ const Sidebar = () => {
               </button>
             </div>
 
-            {/* Search Input */}
             <div className="p-6 border-b border-base-300">
               <div className="relative">
                 <input
@@ -217,64 +208,65 @@ const Sidebar = () => {
               </div>
             </div>
 
-            {/* Search Results */}
             <div className="flex-1 overflow-y-auto p-6">
-              {isSearching && (
+              {isSearching ? (
                 <div className="flex justify-center py-4">
                   <div className="loading loading-spinner loading-sm"></div>
                 </div>
-              )}
-
-              {!isSearching && searchResults.map((user) => (
-                <div key={user._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded mb-2 last:mb-0">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={user.profilePic || "/avatar.png"}
-                      alt={user.fullname}
-                      className="size-10 rounded-full"
-                    />
-                    <div>
-                      <div className="font-medium">{user.fullname}</div>
-                      <div className="text-sm text-zinc-400">@{user.username}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    {user.relationshipStatus === 'friends' && (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <UserCheck className="size-4" />
-                        <span className="text-sm">Friends</span>
+              ) : (
+                <>
+                  {searchResults.map((user) => (
+                    <div key={user._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded mb-2 last:mb-0">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={user.profilePic || "/avatar.png"}
+                          alt={user.fullname}
+                          className="size-10 rounded-full"
+                        />
+                        <div>
+                          <div className="font-medium">{user.fullname}</div>
+                          <div className="text-sm text-zinc-400">@{user.username}</div>
+                        </div>
                       </div>
-                    )}
-                    {user.relationshipStatus === 'sent' && (
-                      <span className="text-sm text-zinc-500">Request Sent</span>
-                    )}
-                    {user.relationshipStatus === 'received' && (
-                      <span className="text-sm text-blue-600">Pending</span>
-                    )}
-                    {user.relationshipStatus === 'none' && (
-                      <button
-                        onClick={() => handleSendRequest(user._id)}
-                        className="btn btn-sm btn-primary"
-                      >
-                        <UserPlus className="size-4" />
-                        Add
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
 
-              {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
-                <div className="text-center text-zinc-500 py-4">
-                  No users found
-                </div>
-              )}
+                      <div>
+                        {user.relationshipStatus === 'friends' && (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <UserCheck className="size-4" />
+                            <span className="text-sm">Friends</span>
+                          </div>
+                        )}
+                        {user.relationshipStatus === 'sent' && (
+                          <span className="text-sm text-zinc-500">Request Sent</span>
+                        )}
+                        {user.relationshipStatus === 'received' && (
+                          <span className="text-sm text-blue-600">Pending</span>
+                        )}
+                        {user.relationshipStatus === 'none' && (
+                          <button
+                            onClick={() => handleSendRequest(user._id)}
+                            className="btn btn-sm btn-primary"
+                          >
+                            <UserPlus className="size-4" />
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
 
-              {searchQuery.length < 2 && (
-                <div className="text-center text-zinc-400 py-4">
-                  Enter at least 2 characters to search
-                </div>
+                  {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                    <div className="text-center text-zinc-500 py-4">
+                      No users found
+                    </div>
+                  )}
+
+                  {searchQuery.length < 2 && (
+                    <div className="text-center text-zinc-400 py-4">
+                      Enter at least 2 characters to search
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
