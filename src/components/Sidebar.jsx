@@ -90,7 +90,7 @@ const Sidebar = () => {
           
           <button
             onClick={() => setShowAddFriend(true)}
-            className="btn btn-sm btn-ghost hidden md:flex"
+            className="btn btn-sm btn-ghost max-md:hidden flex"
             title="Add Friend"
           >
             <UserPlus className="size-4" />
@@ -161,7 +161,7 @@ const Sidebar = () => {
             <div className="mb-2">
               {showOnlineOnly ? "No online friends" : "No friends yet"}
             </div>
-            <div className="hidden md:block">
+            <div className="max-md:hidden block">
               <button
                 onClick={() => setShowAddFriend(true)}
                 className="btn btn-sm btn-primary flex mx-auto"
