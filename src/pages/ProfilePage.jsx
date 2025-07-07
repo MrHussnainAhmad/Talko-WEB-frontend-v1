@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, Trash2 } from "lucide-react";
+import { Camera, Mail, User, Trash2, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -18,7 +18,14 @@ const ProfilePage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [about, setAbout] = useState(authUser?.about || "");
+  const [isEditingAbout, setIsEditingAbout] = useState(false);
   const navigate = useNavigate();
+
+  // Sync about field when authUser changes
+  React.useEffect(() => {
+    setAbout(authUser?.about || "");
+  }, [authUser?.about]);
 
   const compressImage = (file, maxWidth = 800, quality = 0.8) => {
     return new Promise((resolve) => {
@@ -56,6 +63,23 @@ const ProfilePage = () => {
     } catch (error) {
       console.error("Error processing image:", error);
       toast.error("Failed to update profile picture");
+    }
+  };
+
+  const handleAboutUpdate = async () => {
+    if (about.trim() === (authUser?.about || "").trim()) {
+      setIsEditingAbout(false);
+      return;
+    }
+
+    try {
+      await updateProfile({ about: about.trim() });
+      setIsEditingAbout(false);
+      toast.success("About updated successfully!");
+    } catch (error) {
+      console.error("Error updating about:", error);
+      toast.error("Failed to update about");
+      setAbout(authUser?.about || ""); // Reset to original value
     }
   };
 
@@ -142,6 +166,61 @@ const ProfilePage = () => {
               <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
                 {authUser?.email}
               </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="text-sm text-zinc-400 flex items-center gap-2">
+                <FileText className="size-4" />
+                About
+              </div>
+              {isEditingAbout ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={about}
+                    onChange={(e) => setAbout(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-base-200 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    rows="3"
+                    maxLength="200"
+                    placeholder="Tell us about yourself..."
+                    disabled={isUpdatingProfile}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-500">
+                      {about.length}/200 characters
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setAbout(authUser?.about || "");
+                          setIsEditingAbout(false);
+                        }}
+                        className="px-3 py-1 text-sm bg-base-300 hover:bg-base-200 rounded-md transition-colors"
+                        disabled={isUpdatingProfile}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAboutUpdate}
+                        className={`px-3 py-1 text-sm bg-primary hover:bg-primary-focus text-white rounded-md transition-colors ${
+                          isUpdatingProfile ? "opacity-70 cursor-not-allowed" : ""
+                        }`}
+                        disabled={isUpdatingProfile}
+                      >
+                        {isUpdatingProfile ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => setIsEditingAbout(true)}
+                  className="px-4 py-2.5 bg-base-200 rounded-lg border min-h-[2.5rem] cursor-pointer hover:bg-base-300 transition-colors flex items-center"
+                >
+                  <p className="text-base-content">
+                    {authUser?.about || "Click to add something about yourself..."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { X, Circle, UserCheck, Trash2, Shield } from 'lucide-react'
-import Profiles from './Profiles'
+import UserProfile from './UserProfile'
 
 const ChatHeader = () => {
     const { selectedUser, setSelectedUser, messageCounts, deleteChatHistory } = useChatStore();
@@ -31,11 +31,15 @@ const ChatHeader = () => {
                 <div className='flex items-center gap-3'>
                     {/* AVATAR / PROFILE-PIC with Online Indicator */}
                     <div className='avatar'>
-                        <div className='size-10 rounded-full relative cursor-pointer' onClick={() => setShowProfile(true)}>
+                        <div 
+                            className='size-10 rounded-full relative cursor-pointer hover:opacity-80 transition-opacity' 
+                            onClick={() => setShowProfile(true)}
+                            title={`View ${selectedUser?.fullname}'s profile`}
+                        >
                             <img 
                                 src={selectedUser?.profilePic || '/Profile.png'} 
                                 alt={selectedUser?.fullname || 'User'} 
-                                className='rounded-full object-cover hover:opacity-80 transition-opacity'
+                                className='rounded-full object-cover'
                             />
                             {/* Online Status Indicator */}
                             <div className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-base-100 ${
@@ -109,6 +113,14 @@ const ChatHeader = () => {
                     </button>
                 </div>
             </div>
+
+            {/* User Profile Modal */}
+            {showProfile && selectedUser && (
+                <UserProfile 
+                    userId={selectedUser._id} 
+                    onClose={() => setShowProfile(false)} 
+                />
+            )}
         </div>
     )
 }
