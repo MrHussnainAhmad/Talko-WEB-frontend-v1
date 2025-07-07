@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -6,8 +6,10 @@ import { toast } from "react-hot-toast";
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
-  const fileInputRef = useRef(null); // Fixed: was "fileinputRef"
-  const { sendMessage } = useChatStore();
+  const [isTyping, setIsTyping] = useState(false);
+  const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const { sendMessage, selectedUser, emitTyping, emitStopTyping } = useChatStore();
 
   const handleSelectImg = (e) => {
     const file = e.target.files[0];
@@ -31,6 +33,40 @@ const MessageInput = () => {
       fileInputRef.current.value = "";
     }
   };
+// Emit typing event
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    if (text.trim()) {
+      if (!isTyping) {
+        emitTyping(selectedUser._id);
+        setIsTyping(true);
+      }
+
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        emitStopTyping(selectedUser._id);
+        setIsTyping(false);
+      }, 2000);
+    } else {
+      if (isTyping) {
+        emitStopTyping(selectedUser._id);
+        setIsTyping(false);
+      }
+    }
+  }, [text, selectedUser, emitTyping, emitStopTyping, isTyping]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (isTyping && selectedUser) {
+        emitStopTyping(selectedUser._id);
+      }
+    };
+  }, []);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -42,6 +78,12 @@ const MessageInput = () => {
         text: text.trim(),
         image: imagePreview,
       });
+
+      clearTimeout(typingTimeoutRef.current);
+      if (selectedUser) {
+        emitStopTyping(selectedUser._id);
+      }
+      setIsTyping(false);
 
       setText("");
       setImagePreview(null);

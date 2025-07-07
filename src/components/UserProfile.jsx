@@ -12,7 +12,8 @@ const UserProfile = ({ userId, onClose }) => {
     const fetchUserProfile = async () => {
       try {
         const response = await axiosInstance.get(`/auth/user-profile/${userId}`);
-        setProfile(response.data);
+        // The API returns {user: {...}}, so we need to extract the user object
+        setProfile(response.data.user);
       } catch (err) {
         setError(err.response?.data?.message || err.message);
         toast.error("Failed to load user profile");
@@ -29,7 +30,7 @@ const UserProfile = ({ userId, onClose }) => {
   if (!userId) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50 p-4">
       <div className="bg-base-200 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header with close button */}
         <div className="flex justify-between items-center mb-6">
@@ -60,7 +61,7 @@ const UserProfile = ({ userId, onClose }) => {
                 const fetchUserProfile = async () => {
                   try {
                     const response = await axiosInstance.get(`/auth/user-profile/${userId}`);
-                    setProfile(response.data);
+                    setProfile(response.data.user);
                   } catch (err) {
                     setError(err.response?.data?.message || err.message);
                   } finally {
@@ -120,11 +121,11 @@ const UserProfile = ({ userId, onClose }) => {
                 </div>
                 <div className="px-4 py-2.5 bg-base-300 rounded-lg border">
                   <p className="text-base-content">
-                    {new Date(profile.createdAt).toLocaleDateString('en-US', {
+                    {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    })}
+                    }) : 'Date not available'}
                   </p>
                 </div>
               </div>

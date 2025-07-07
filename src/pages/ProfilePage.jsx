@@ -230,7 +230,11 @@ const ProfilePage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-zinc-700">
                 <span>Member Since:</span>
-                <span>{new Date(authUser.createdAt).toLocaleDateString()}</span>
+                <span>{authUser?.createdAt ? new Date(authUser.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : 'Date not available'}</span>
               </div>
               <div className="flex items-center justify-between border-b border-red-700 py-4">
                 <span>Account Status:</span>

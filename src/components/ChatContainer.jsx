@@ -14,15 +14,16 @@ const ChatContainer = () => {
     selectedUser,
     listenToMessages,
     dontListenToMessages,
+    typingUsers,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
   useEffect(() => {
-    if (messageEndRef.current && messages.length > 0) {
+    if (messageEndRef.current && (messages.length > 0 || typingUsers.length > 0)) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, typingUsers]);
 
   useEffect(() => {
     if (selectedUser?._id) {
@@ -83,6 +84,29 @@ const ChatContainer = () => {
             </div>
           </div>
         ))}
+        
+        {/* Typing Indicator */}
+        {typingUsers.length > 0 && selectedUser && typingUsers.includes(selectedUser._id) && (
+          <div className="chat chat-start">
+            <div className="chat-image avatar">
+              <div className="size-10 rounded-full border">
+                <img
+                  src={selectedUser.profilePic || "/Profile.png"}
+                  alt={selectedUser.fullname || "User"}
+                />
+              </div>
+            </div>
+            <div className="chat-bubble flex items-center gap-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+              <span className="text-sm text-gray-500">typing...</span>
+            </div>
+          </div>
+        )}
+        
         {/* Invisible div to scroll to */}
         <div ref={messageEndRef} />
       </div>

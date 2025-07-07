@@ -5,12 +5,13 @@ import { X, Circle, UserCheck, Trash2, Shield } from 'lucide-react'
 import UserProfile from './UserProfile'
 
 const ChatHeader = () => {
-    const { selectedUser, setSelectedUser, messageCounts, deleteChatHistory } = useChatStore();
+    const { selectedUser, setSelectedUser, messageCounts, deleteChatHistory, typingUsers } = useChatStore();
     const { onlineUsers, removeFriend } = useAuthStore();
     const [showProfile, setShowProfile] = useState(false);
 
     const isOnline = onlineUsers.includes(selectedUser?._id);
     const messageCount = messageCounts[selectedUser?._id] || 0;
+    const isTyping = typingUsers.includes(selectedUser?._id);
 
     const handleRemoveFriend = async () => {
         if (window.confirm(`Are you sure you want to remove ${selectedUser?.fullname} as a friend?`)) {
@@ -65,12 +66,12 @@ const ChatHeader = () => {
                             <span className='text-base-content/50'>•</span>
                             <div className='flex items-center gap-1'>
                                 <Circle className={`size-2 fill-current ${
-                                    isOnline ? 'text-green-500' : 'text-gray-400'
+                                    isTyping ? 'text-blue-500' : isOnline ? 'text-green-500' : 'text-gray-400'
                                 }`} />
                                 <p className={`text-sm font-medium ${
-                                    isOnline ? 'text-green-600' : 'text-base-content/70'
+                                    isTyping ? 'text-blue-600' : isOnline ? 'text-green-600' : 'text-base-content/70'
                                 }`}>
-                                    {isOnline ? 'Online' : 'Offline'}
+                                    {isTyping ? 'typing...' : isOnline ? 'Online' : 'Offline'}
                                 </p>
                             </div>
                             <span className='text-base-content/50'>•</span>
