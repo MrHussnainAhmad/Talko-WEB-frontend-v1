@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { X, Circle, UserCheck, Trash2, Shield } from 'lucide-react'
+import Profiles from './Profiles'
 
 const ChatHeader = () => {
     const { selectedUser, setSelectedUser, messageCounts, deleteChatHistory } = useChatStore();
     const { onlineUsers, removeFriend } = useAuthStore();
+    const [showProfile, setShowProfile] = useState(false);
 
     const isOnline = onlineUsers.includes(selectedUser?._id);
     const messageCount = messageCounts[selectedUser?._id] || 0;
@@ -29,11 +31,11 @@ const ChatHeader = () => {
                 <div className='flex items-center gap-3'>
                     {/* AVATAR / PROFILE-PIC with Online Indicator */}
                     <div className='avatar'>
-                        <div className='size-10 rounded-full relative'>
+                        <div className='size-10 rounded-full relative cursor-pointer' onClick={() => setShowProfile(true)}>
                             <img 
                                 src={selectedUser?.profilePic || '/Profile.png'} 
                                 alt={selectedUser?.fullname || 'User'} 
-                                className='rounded-full object-cover'
+                                className='rounded-full object-cover hover:opacity-80 transition-opacity'
                             />
                             {/* Online Status Indicator */}
                             <div className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-base-100 ${
