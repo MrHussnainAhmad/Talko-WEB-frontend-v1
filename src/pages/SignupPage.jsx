@@ -84,7 +84,7 @@ const SignupPage = () => {
         <div className="flex flex-col justify-center items-center bg-white/70 backdrop-blur-sm p-8 rounded-lg shadow-lg">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center mb-8">
-              <div className="flex flex-col items-center gap-2 group">
+              <div className="flex flex-col items-center gap-5 group">
                 <div className="w-15 h-15 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                   <MessageCircle
                     className="w-10 h-10 text-purple-600 stroke-current"
