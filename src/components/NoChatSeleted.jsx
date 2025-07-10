@@ -8,7 +8,7 @@ const NoChatSeleted = () => {
         {/* ICON */}
         <div className="flex justify-center gap-4 mb-4">
           <div className="relative">
-            <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-bounce">
+            <div className="size-16 rounded-2xl flex items-center justify-center animate-bounce">
               <img src="/Logo.png" alt="Talkora Logo" className="size-16" />
             </div>
           </div>
