@@ -368,7 +368,7 @@ export const useAuthStore = create((set, get) => ({
     
     console.log("Connecting socket for user:", authUser._id);
     
-    const socket = io("https://talko-private-chat.up.railway.app", {
+    const socket = io("https://talkora-private-chat.up.railway.app", {
       withCredentials: true,
       query: {
         userId: authUser._id,

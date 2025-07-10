@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const axiosInstance = axios.create({
-  baseURL: "https://talko-private-chat.up.railway.app/api",
+  baseURL: "https://talkora-private-chat.up.railway.app/api",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
