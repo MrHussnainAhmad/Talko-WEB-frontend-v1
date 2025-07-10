@@ -20,7 +20,7 @@ const NoChatSeleted = () => {
         </p>
         {/* Logo */}
         <div className="mt-6 flex justify-center">
-          <img src="/logo.png" alt="Talkora Logo" className="size-16" />
+          <img src="/Logo.png" alt="Talkora Logo" className="size-16" />
         </div>
       </div>
     </div>
