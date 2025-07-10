@@ -1,6 +1,5 @@
 import React from "react";
 import { MessageCircle } from "lucide-react";
-import Logo from "./Logo";
 
 const NoChatSeleted = () => {
   return (
@@ -21,7 +20,7 @@ const NoChatSeleted = () => {
         </p>
         {/* Logo */}
         <div className="mt-6 flex justify-center">
-          <Logo className="size-16" />
+          <img src="/logo.png" alt="Talkora Logo" className="size-16" />
         </div>
       </div>
     </div>
