@@ -141,8 +141,8 @@ setupGlobalNotifications: () => {
       const isOnTalkoTab = isUserOnTalkoTab();
       
       if (isChattingWithSender && isOnTalkoTab) {
-        // Same chat + on Talko tab = Confirm.wav
-        console.log("💬 User is in same chat and on Talko tab - playing confirm sound");
+        // Same chat + on Talkora tab = Confirm.wav
+        console.log("💬 User is in same chat and on Talkora tab - playing confirm sound");
         playConfirmSound();
       } else {
         // Different chat OR on other tab = notification.mp3
@@ -235,7 +235,7 @@ setupGlobalNotifications: () => {
         set({
           selectedUser: {
             ...selectedUser,
-            fullname: "Talko User",
+            fullname: "Talkora User",
             username: "",
             profilePic: "",
             isDeleted: true,
@@ -249,7 +249,7 @@ setupGlobalNotifications: () => {
           if (msg.senderId === deletedUserId) {
             return {
               ...msg,
-              senderName: "Talko User",
+              senderName: "Talkora User",
               senderProfilePic: "",
               isDeleted: true,
             };

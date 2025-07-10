@@ -126,7 +126,7 @@ const App = () => {
 
   // Update document title with pending friend requests count
   useEffect(() => {
-    const baseTitle = "Talko - Chat App";
+    const baseTitle = "Talkora - Private Chat App";
     if (incomingRequests.length > 0) {
       document.title = `(${incomingRequests.length}) ${baseTitle}`;
     } else {
@@ -139,7 +139,7 @@ const App = () => {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <Loader className="size-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-base-content/70">Loading Talko...</p>
+          <p className="text-base-content/70">Loading Talkora...</p>
         </div>
       </div>
     );

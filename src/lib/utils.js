@@ -82,7 +82,7 @@ export function getUserDisplayName(user, onlineUsers = []) {
   if (!user) return "Unknown User";
   
   if (user.isDeleted) {
-    return "Talko User";
+    return "Talkora User";
   }
   
   return user.fullname || "Unknown User";
@@ -174,7 +174,7 @@ export const cleanupTabVisibility = () => {
   }
 };
 
-// Check if user is currently on Talko tab
+// Check if user is currently on Talkora tab
 export const isUserOnTalkoTab = () => {
   return isTabVisible;
 };
@@ -220,7 +220,7 @@ export const playNotificationSound = () => {
   }
 };
 
-// Play confirm sound for messages when user is in the same chat AND on Talko tab
+// Play confirm sound for messages when user is in the same chat AND on Talkora tab
 export const playConfirmSound = () => {
   try {
     console.log("🔊 playConfirmSound called");
