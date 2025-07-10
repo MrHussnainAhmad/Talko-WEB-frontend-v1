@@ -18,6 +18,8 @@ export const useAuthStore = create((set, get) => ({
   isResendingVerification: false,
   verificationEmail: null,
   isDeletingAccount: false,
+  blockedUsers: [],
+  isBlockingUser: false,
 
   checkAuth: async () => {
     try {
@@ -355,6 +357,68 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error("Error searching users:", error);
       return [];
+    }
+  },
+
+  // Blocking functionality
+  blockUser: async (userId) => {
+    set({ isBlockingUser: true });
+    try {
+      await axiosInstance.post(`/auth/block/${userId}`);
+      get().getBlockedUsers();
+      get().getFriends(); // Refresh friends list to update blocking status
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to block user";
+      console.error("Block user error:", errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      set({ isBlockingUser: false });
+    }
+  },
+
+  unblockUser: async (userId) => {
+    set({ isBlockingUser: true });
+    try {
+      await axiosInstance.post(`/auth/unblock/${userId}`);
+      get().getBlockedUsers();
+      get().getFriends(); // Refresh friends list to update blocking status
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to unblock user";
+      console.error("Unblock user error:", errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      set({ isBlockingUser: false });
+    }
+  },
+
+  getBlockedUsers: async () => {
+    try {
+      const res = await axiosInstance.get("/auth/blocked-users");
+      set({ blockedUsers: res.data.blockedUsers });
+    } catch (error) {
+      console.error("Error fetching blocked users:", error);
+    }
+  },
+
+  checkBlockStatus: async (userId) => {
+    try {
+      const res = await axiosInstance.get(`/auth/block-status/${userId}`);
+      return res.data;
+    } catch (error) {
+      console.error("Error checking block status:", error);
+      return { isBlocked: false, isBlockedBy: false };
+    }
+  },
+
+  getLastSeen: async (userId) => {
+    try {
+      const res = await axiosInstance.get(`/auth/last-seen/${userId}`);
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching last seen:", error);
+      return null;
     }
   },
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../lib/axios";
-import { X, User, Calendar, FileText } from "lucide-react";
+import { X, User, Calendar, FileText, Clock, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 
 const UserProfile = ({ userId, onClose }) => {
@@ -112,6 +112,37 @@ const UserProfile = ({ userId, onClose }) => {
                   </p>
                 </div>
               </div>
+
+              {/* Last Seen Section */}
+              {!profile.isBlocked && (
+                <div className="space-y-1.5">
+                  <div className="text-sm text-zinc-400 flex items-center gap-2">
+                    <Clock className="size-4" />
+                    Last Seen
+                  </div>
+                  <div className="px-4 py-2.5 bg-base-300 rounded-lg border">
+                    <p className="text-base-content">
+                      {profile.isOnline ? 'Online now' : 
+                       profile.formattedLastSeen || 'Last seen information not available'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Blocked Status */}
+              {profile.isBlocked && (
+                <div className="space-y-1.5">
+                  <div className="text-sm text-zinc-400 flex items-center gap-2">
+                    <Shield className="size-4" />
+                    Privacy Status
+                  </div>
+                  <div className="px-4 py-2.5 bg-warning/20 rounded-lg border border-warning/30">
+                    <p className="text-warning">
+                      This user has restricted access to their information
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Member Since */}
               <div className="space-y-1.5">

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
@@ -16,8 +16,9 @@ const ChatContainer = () => {
     dontListenToMessages,
     typingUsers,
   } = useChatStore();
-  const { authUser } = useAuthStore();
+  const { authUser, checkBlockStatus } = useAuthStore();
   const messageEndRef = useRef(null);
+  const [blockStatus, setBlockStatus] = useState({ isBlocked: false, isBlockedBy: false });
 
   useEffect(() => {
     if (messageEndRef.current && (messages.length > 0 || typingUsers.length > 0)) {
@@ -29,17 +30,25 @@ const ChatContainer = () => {
     if (selectedUser?._id) {
       getMessages(selectedUser._id);
       listenToMessages();
+      fetchBlockStatus();
 
       return () => dontListenToMessages();
     }
   }, [selectedUser?._id, getMessages, listenToMessages, dontListenToMessages]);
+
+  const fetchBlockStatus = async () => {
+    if (selectedUser?._id) {
+      const status = await checkBlockStatus(selectedUser._id);
+      setBlockStatus(status);
+    }
+  };
 
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
         <ChatHeader />
         <MessageSkeleton />
-        <MessageInput />
+        <MessageInput isBlocked={blockStatus.isBlockedBy} />
       </div>
     );
   }
@@ -48,6 +57,7 @@ const ChatContainer = () => {
     <div className="flex-1 flex flex-col overflow-auto">
       <ChatHeader />
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Show normal messages */}
         {messages.map((message, index) => (
           <div
             key={message._id}
@@ -110,7 +120,19 @@ const ChatContainer = () => {
         {/* Invisible div to scroll to */}
         <div ref={messageEndRef} />
       </div>
-      <MessageInput />
+      
+      {/* Show blocking message if current user blocked the selected user */}
+      {blockStatus.isBlocked && (
+        <div className="px-4 py-2">
+          <div className="text-center bg-base-200 rounded-lg p-4 border border-base-300">
+            <p className="text-base font-semibold text-base-content">
+              🔒 Blocked. Silence is permanent.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      <MessageInput isBlocked={blockStatus.isBlockedBy} />
     </div>
   );
 };

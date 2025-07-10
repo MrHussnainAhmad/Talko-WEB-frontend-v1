@@ -252,3 +252,63 @@ export const playConfirmSound = () => {
     console.error("❌ Error creating confirm audio:", error);
   }
 };
+
+// Client-side last seen formatter
+export const getFormattedLastSeen = (lastSeenTime, isOnline = false) => {
+  if (isOnline) {
+    return "Online";
+  }
+  
+  if (!lastSeenTime) {
+    return "Offline";
+  }
+  
+  const now = new Date();
+  const lastSeen = new Date(lastSeenTime);
+  const diffInMs = now - lastSeen;
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  
+  if (diffInMinutes < 60) {
+    return `last seen today at ${diffInMinutes} ago`;
+  } else if (diffInHours < 6) {
+    return `last seen today at ${diffInHours} ago`;
+  } else if (diffInHours < 24) {
+    const time12 = lastSeen.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+    return `last seen today at ${time12} ago`;
+  } else if (diffInDays === 1) {
+    const time12 = lastSeen.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+    return `last seen yesterday at ${time12}`;
+  } else if (diffInDays < 7) {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeek = dayNames[lastSeen.getDay()];
+    const time12 = lastSeen.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+    return `last seen on ${dayOfWeek} at ${time12}`;
+  } else {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayOfWeek = dayNames[lastSeen.getDay()];
+    const day = lastSeen.getDate();
+    const month = monthNames[lastSeen.getMonth()];
+    const time12 = lastSeen.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+    return `last seen on ${dayOfWeek}, ${day} ${month} at ${time12}`;
+  }
+};

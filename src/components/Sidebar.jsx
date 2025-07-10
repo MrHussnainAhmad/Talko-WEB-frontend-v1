@@ -22,12 +22,22 @@ const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   
   useEffect(() => {
     getUsers();
     getFriends();
     getIncomingRequests();
   }, [getUsers, getFriends, getIncomingRequests]);
+  
+  // Update current time every minute for real-time last seen updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
@@ -150,7 +160,10 @@ const Sidebar = () => {
             <div className="hidden lg:block text-left min-w-0">
               <div className="font-medium truncate">{friend.fullname || friend.username || "Unknown User"}</div>
               <div className="text-sm text-zinc-400">
-                {safeOnlineUsers.includes(friend._id) ? "Online" : "Offline"}
+                {friend.isBlockedBy 
+                  ? "Last seen information hidden" 
+                  : safeOnlineUsers.includes(friend._id) ? "Online" : "Offline"
+                }
               </div>
             </div>
           </button>

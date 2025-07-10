@@ -3,7 +3,7 @@ import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-const MessageInput = () => {
+const MessageInput = ({ isBlocked = false }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -95,6 +95,11 @@ const MessageInput = () => {
     }
   };
 
+  // Don't render input if blocked
+  if (isBlocked) {
+    return null;
+  }
+
   return (
     <div className="p-4 w-full">
       {imagePreview && (
@@ -130,7 +135,7 @@ const MessageInput = () => {
             type="file"
             accept="image/*"
             className="hidden"
-            ref={fileInputRef} // Fixed: was "fileInputRef"
+            ref={fileInputRef}
             onChange={handleSelectImg}
           />
 
