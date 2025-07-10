@@ -9,7 +9,7 @@ const NoChatSeleted = () => {
         <div className="flex justify-center gap-4 mb-4">
           <div className="relative">
             <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-bounce">
-              <MessageCircle className="size-8 text-gray-500" />
+              <img src="/Logo.png" alt="Talkora Logo" className="size-16" />
             </div>
           </div>
         </div>
@@ -18,10 +18,6 @@ const NoChatSeleted = () => {
         <p className="text-base-content/60">
           Select a Conversation to Start chatting!
         </p>
-        {/* Logo */}
-        <div className="mt-6 flex justify-center">
-          <img src="/Logo.png" alt="Talkora Logo" className="size-16" />
-        </div>
       </div>
     </div>
   );
