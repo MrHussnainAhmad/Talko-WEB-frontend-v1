@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
-import { useNotificationStore } from "./useNotificationStore";
+import { useNotificationStore } from "./useNotificationStore.jsx";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,

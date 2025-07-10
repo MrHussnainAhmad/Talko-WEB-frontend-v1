@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { LogOut, MessageCircle, Settings, User, Bell, UserPlus, UserCheck, X, Search, BellRing } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
-import { useNotificationStore } from "../store/useNotificationStore";
+import { useNotificationStore } from "../store/useNotificationStore.jsx";
 import NotificationSettings from "./NotificationSettings";
 
 const Navbar = () => {

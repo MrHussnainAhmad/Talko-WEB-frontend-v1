@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Bell, BellOff, Check, X, TestTube } from 'lucide-react';
-import { useNotificationStore } from '../store/useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore.jsx';
 import toast from 'react-hot-toast';
 
 const NotificationSettings = ({ isOpen, onClose }) => {
