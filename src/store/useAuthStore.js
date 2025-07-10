@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
+import { useNotificationStore } from "./useNotificationStore";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -68,6 +69,12 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: response.data, verificationEmail: null });
       toast.success("Logged in successfully!");
       get().connectSocket();
+      
+      // Initialize notifications after successful login
+      setTimeout(() => {
+        useNotificationStore.getState().initializeNotifications();
+      }, 1000);
+      
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Login failed";
@@ -91,6 +98,9 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
+      // Remove FCM token before logout
+      await useNotificationStore.getState().removeFCMToken();
+      
       await axiosInstance.post("/auth/logout");
       set({ 
         authUser: null,
@@ -514,6 +524,18 @@ export const useAuthStore = create((set, get) => ({
 
     socket.on('error', (error) => {
       console.error('Socket error:', error);
+    });
+
+    // Enhanced notification listener
+    socket.on('notification', (notificationData) => {
+      console.log('📬 Notification received:', notificationData);
+      useNotificationStore.getState().handleForegroundNotification({
+        notification: {
+          title: notificationData.title,
+          body: notificationData.body
+        },
+        data: notificationData.data || {}
+      });
     });
   },
   
