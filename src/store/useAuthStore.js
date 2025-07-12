@@ -326,9 +326,32 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoadingRequests: true });
     try {
       const res = await axiosInstance.get("/friends/requests/incoming");
-      set({ incomingRequests: res.data });
+      
+      // Validate the response data
+      console.log('🔍 Raw incoming requests response:', res.data);
+      
+      if (Array.isArray(res.data)) {
+        // Normal case - array of requests
+        set({ incomingRequests: res.data });
+        console.log('✅ Set incoming requests:', res.data.length, 'items');
+      } else if (res.data && Array.isArray(res.data.requests)) {
+        // In case data is wrapped in an object
+        set({ incomingRequests: res.data.requests });
+        console.log('✅ Set incoming requests from nested:', res.data.requests.length, 'items');
+      } else {
+        // Unexpected response format
+        console.error('🚨 Unexpected response format for incoming requests:', res.data);
+        set({ incomingRequests: [] });
+      }
     } catch (error) {
-      console.error("Error fetching incoming requests:", error);
+      console.error('❌ Error fetching incoming requests:', error);
+      console.error('❌ Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      // Reset to empty array on error
+      set({ incomingRequests: [] });
     } finally {
       set({ isLoadingRequests: false });
     }
@@ -337,18 +360,40 @@ export const useAuthStore = create((set, get) => ({
   getOutgoingRequests: async () => {
     try {
       const res = await axiosInstance.get("/friends/requests/outgoing");
-      set({ outgoingRequests: res.data });
+      
+      // Validate the response data
+      console.log('🔍 Raw outgoing requests response:', res.data);
+      
+      if (Array.isArray(res.data)) {
+        set({ outgoingRequests: res.data });
+        console.log('✅ Set outgoing requests:', res.data.length, 'items');
+      } else {
+        console.error('🚨 Unexpected response format for outgoing requests:', res.data);
+        set({ outgoingRequests: [] });
+      }
     } catch (error) {
-      console.error("Error fetching outgoing requests:", error);
+      console.error('❌ Error fetching outgoing requests:', error);
+      set({ outgoingRequests: [] });
     }
   },
 
   getFriends: async () => {
     try {
       const res = await axiosInstance.get("/friends");
-      set({ friends: res.data });
+      
+      // Validate the response data
+      console.log('🔍 Raw friends response:', res.data);
+      
+      if (Array.isArray(res.data)) {
+        set({ friends: res.data });
+        console.log('✅ Set friends:', res.data.length, 'items');
+      } else {
+        console.error('🚨 Unexpected response format for friends:', res.data);
+        set({ friends: [] });
+      }
     } catch (error) {
-      console.error("Error fetching friends:", error);
+      console.error('❌ Error fetching friends:', error);
+      set({ friends: [] });
     }
   },
 

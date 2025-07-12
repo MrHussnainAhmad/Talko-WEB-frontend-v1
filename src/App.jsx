@@ -6,6 +6,7 @@ import SignupPage from "./pages/SignupPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import DebugPage from "./pages/DebugPage.jsx";
 import { useAuthStore } from "./store/useAuthStore.js";
 import { useChatStore } from "./store/useChatStore.js";
 import { Loader } from "lucide-react";
@@ -161,12 +162,27 @@ const App = () => {
   // Update document title with pending friend requests count
   useEffect(() => {
     const baseTitle = "Talkora - Private Chat App";
-    if (incomingRequests.length > 0) {
+    
+    // Debug logging to understand what's happening
+    console.log('📊 Incoming requests data:', {
+      length: incomingRequests?.length,
+      isArray: Array.isArray(incomingRequests),
+      data: incomingRequests
+    });
+    
+    // Safety check to ensure incomingRequests is a valid array
+    if (Array.isArray(incomingRequests) && incomingRequests.length > 0 && incomingRequests.length < 100) {
       document.title = `(${incomingRequests.length}) ${baseTitle}`;
     } else {
       document.title = baseTitle;
+      
+      // Log if there's suspicious data
+      if (incomingRequests?.length >= 100) {
+        console.error('🚨 Suspicious friend request count:', incomingRequests.length);
+        console.error('🚨 Data:', incomingRequests);
+      }
     }
-  }, [incomingRequests.length]);
+  }, [incomingRequests?.length]);
 
   if (isCheckingAuth && !authUser)
     return (
@@ -201,6 +217,10 @@ const App = () => {
         <Route
           path="/profile"
           element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/debug"
+          element={<DebugPage />}
         />
 
         {/* Fallback route */}
