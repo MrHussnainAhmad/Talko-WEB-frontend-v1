@@ -18,15 +18,17 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize messaging
-let messaging;
+let app, messaging;
 try {
+  app = initializeApp(firebaseConfig);
+  console.log("✅ Firebase app initialized");
+  
+  // Initialize messaging
   messaging = getMessaging(app);
   console.log("✅ Firebase messaging initialized");
 } catch (error) {
-  console.error("❌ Failed to initialize Firebase messaging:", error);
+  console.error("❌ Failed to initialize Firebase:", error);
+  console.warn("⚠️ Firebase features will be disabled");
 }
 
 // Function to convert URL-safe base64 to Uint8Array
@@ -239,12 +241,18 @@ export const requestNotificationPermission = async () => {
 };
 
 // Handle incoming messages
-onMessage(messaging, (payload) => {
-  console.log("Message received. ", payload);
-  
-  // Play notification sound
-  soundManager.playNotificationSound();
-  
-  // Custom handling for foreground messages
-  // Show a notification using toast or custom UI
-});
+if (messaging) {
+  try {
+    onMessage(messaging, (payload) => {
+      console.log("Message received. ", payload);
+      
+      // Play notification sound
+      soundManager.playNotificationSound();
+      
+      // Custom handling for foreground messages
+      // Show a notification using toast or custom UI
+    });
+  } catch (error) {
+    console.error("❌ Failed to set up onMessage listener:", error);
+  }
+}

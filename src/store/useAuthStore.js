@@ -574,7 +574,15 @@ export const useAuthStore = create((set, get) => ({
     
     console.log("Connecting socket for user:", authUser._id);
     
-    const socket = io("https://talkora-private-chat.up.railway.app", {
+    // Dynamic socket URL based on environment
+    const getSocketURL = () => {
+      if (import.meta.env.PROD) {
+        return import.meta.env.VITE_BACKEND_URL || "https://talkora-private-chat.up.railway.app";
+      }
+      return import.meta.env.VITE_BACKEND_LOCAL || "http://localhost:3000";
+    };
+    
+    const socket = io(getSocketURL(), {
       withCredentials: true,
       query: {
         userId: authUser._id,

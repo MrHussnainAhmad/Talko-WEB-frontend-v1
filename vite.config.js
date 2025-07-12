@@ -10,10 +10,25 @@ export default defineConfig({
       "light", "dark",
     ]
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react', 'react-hot-toast'],
+          state: ['zustand']
+        }
+      }
+    },
+    sourcemap: false,
+    minify: 'esbuild',
+    target: 'es2015'
+  },
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'https://talkora-backend-v1-1.vercel.app',
+        target: process.env.VITE_API_URL || 'https://talkora-private-chat.up.railway.app',
         changeOrigin: true,
         secure: true,
         timeout: 20000, // 20 seconds timeout for proxy

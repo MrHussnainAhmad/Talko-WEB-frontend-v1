@@ -1,13 +1,22 @@
 import axios from "axios";
 
+const getBaseURL = () => {
+  // For production, use environment variable or fallback
+  if (import.meta.env.PROD) {
+    return `${import.meta.env.VITE_BACKEND_URL || "https://talkora-private-chat.up.railway.app"}/api`;
+  }
+  // For development, use local or environment variable
+  return `${import.meta.env.VITE_BACKEND_LOCAL || "http://localhost:3000"}/api`;
+};
+
 export const axiosInstance = axios.create({
-  baseURL: `${import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_LOCAL}/api`,
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
   timeout: 15000,
-  credentials: "include", // Add this
+  credentials: "include",
 });
 
 // Custom method for DELETE requests with body
