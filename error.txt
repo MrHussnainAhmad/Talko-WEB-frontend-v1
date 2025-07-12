@@ -1,5 +1,0 @@
-backend_url=https://talkora-private-chat.up.railway.app
-backend_local=localhost:3000
-frontend_url=https://talkora-web-frontend-v1.vercel.app/
-frontend_localhost=localhost:5173
-react_naative_CORS=http://192.168.3.58:3000
