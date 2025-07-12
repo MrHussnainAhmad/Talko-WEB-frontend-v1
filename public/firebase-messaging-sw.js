@@ -28,6 +28,9 @@ messaging.onBackgroundMessage(function(payload) {
     icon: '/Logo.png',
     badge: '/Logo.png',
     data: payload.data,
+    requireInteraction: false,
+    silent: false, // Enable sound
+    tag: 'talkora-notification',
     actions: [
       {
         action: 'open',
@@ -40,7 +43,22 @@ messaging.onBackgroundMessage(function(payload) {
     ]
   };
 
+  // Play notification sound using Audio API in service worker
+  // Note: Audio API is limited in service workers, so we'll rely on the notification sound
+  // The actual sound management will be handled by the main thread
+  
   self.registration.showNotification(notificationTitle, notificationOptions);
+  
+  // Send a message to the main thread to play sound if the app is in background
+  // This helps maintain our sound management logic
+  self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'BACKGROUND_NOTIFICATION_SOUND',
+        payload: payload
+      });
+    });
+  });
 });
 
 // Handle notification click

@@ -14,7 +14,10 @@ const Sidebar = () => {
     searchUsers,
     incomingRequests,
     outgoingRequests,
-    getIncomingRequests
+    getIncomingRequests,
+    authUser,
+    blockedUsers,
+    checkBlockStatus
   } = useAuthStore();
   
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -23,12 +26,32 @@ const Sidebar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [friendsBlockStatus, setFriendsBlockStatus] = useState({});
+  
+  const safeOnlineUsers = onlineUsers || [];
+  const safeFriends = friends || [];
   
   useEffect(() => {
     getUsers();
     getFriends();
     getIncomingRequests();
   }, [getUsers, getFriends, getIncomingRequests]);
+  
+  // Check block status for all friends
+  useEffect(() => {
+    const checkAllFriendsBlockStatus = async () => {
+      const blockStatuses = {};
+      for (const friend of safeFriends) {
+        const status = await checkBlockStatus(friend._id);
+        blockStatuses[friend._id] = status;
+      }
+      setFriendsBlockStatus(blockStatuses);
+    };
+    
+    if (safeFriends.length > 0) {
+      checkAllFriendsBlockStatus();
+    }
+  }, [safeFriends.length, checkBlockStatus]);
   
   // Update current time every minute for real-time last seen updates
   useEffect(() => {
@@ -79,9 +102,6 @@ const Sidebar = () => {
     setSearchQuery("");
     setSearchResults([]);
   };
-
-  const safeOnlineUsers = onlineUsers || [];
-  const safeFriends = friends || [];
 
   const filteredFriends = showOnlineOnly
     ? safeFriends.filter((friend) => safeOnlineUsers.includes(friend._id))
@@ -148,20 +168,28 @@ const Sidebar = () => {
           >
             <div className="relative mx-auto lg:mx-0">
               <img
-                src={friend.profilePic || "/avatar.png"}
+                src={friendsBlockStatus[friend._id]?.isBlockedBy 
+                  ? "/Profile.png" 
+                  : (friend.profilePic || "/Profile.png")}
                 alt={friend.username || friend.fullname || "User"}
                 className="size-12 object-cover rounded-full"
               />
-              {safeOnlineUsers.includes(friend._id) && (
+              {safeOnlineUsers.includes(friend._id) && 
+               !friendsBlockStatus[friend._id]?.isBlocked && 
+               !friendsBlockStatus[friend._id]?.isBlockedBy && (
                 <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
               )}
             </div>
 
             <div className="hidden lg:block text-left min-w-0">
               <div className="font-medium truncate">{friend.fullname || friend.username || "Unknown User"}</div>
-              <div className="text-sm text-zinc-400">
-                {friend.isBlockedBy 
-                  ? "Last seen information hidden" 
+              <div className={`text-sm ${
+                friendsBlockStatus[friend._id]?.isBlocked || friendsBlockStatus[friend._id]?.isBlockedBy 
+                  ? "text-gray-500" 
+                  : "text-zinc-400"
+              }`}>
+                {friendsBlockStatus[friend._id]?.isBlocked || friendsBlockStatus[friend._id]?.isBlockedBy 
+                  ? "Last seen" 
                   : safeOnlineUsers.includes(friend._id) ? "Online" : "Offline"
                 }
               </div>

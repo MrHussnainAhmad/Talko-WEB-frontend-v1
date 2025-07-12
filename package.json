@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.1.10",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
     "firebase": "^11.1.0",
     "lucide-react": "^0.515.0",
     "react": "^19.1.0",

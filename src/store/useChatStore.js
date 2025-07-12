@@ -66,6 +66,13 @@ export const useChatStore = create((set, get) => ({
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     try {
+      // Check if user is blocked before sending
+      const blockStatus = await useAuthStore.getState().checkBlockStatus(selectedUser._id);
+      if (blockStatus.isBlocked || blockStatus.isBlockedBy) {
+        toast.error("Cannot send message to blocked user");
+        return;
+      }
+      
       const res = await axiosInstance.post(
         `/messages/send/${selectedUser._id}`,
         messageData
@@ -78,9 +85,15 @@ export const useChatStore = create((set, get) => ({
           [selectedUser._id]: (state.messageCounts[selectedUser._id] || 0) + 1,
         },
       }));
+      
+      // Play confirm sound for sender when message is sent successfully
+      playConfirmSound();
+      
     } catch (error) {
       if (error.response?.status === 403) {
         toast.error("You can only message friends");
+      } else if (error.response?.status === 423) {
+        toast.error("User is blocked");
       } else {
         toast.error("Failed to send message");
       }
@@ -258,6 +271,22 @@ setupGlobalNotifications: () => {
         }),
       }));
     });
+    
+    // Listen for refresh contacts list event (triggered by blocking/unblocking)
+    socket.on("refreshContactsList", (data) => {
+      console.log("🔄 Refreshing contacts list due to:", data.type);
+      // Refresh the users list
+      get().getUsers();
+      
+      // If the current selected user is involved in the blocking action, refresh their status
+      const { selectedUser } = get();
+      if (selectedUser && 
+          (selectedUser._id === data.blockedUserId || 
+           selectedUser._id === data.unblockedUserId)) {
+        // Force refresh messages and user data
+        get().getMessages(selectedUser._id);
+      }
+    });
   },
 
   dontListenToMessages: () => {
@@ -269,6 +298,7 @@ setupGlobalNotifications: () => {
       socket.off("userStoppedTyping");
       socket.off("chatDeleted");
       socket.off("userAccountDeleted");
+      socket.off("refreshContactsList");
     }
   },
 

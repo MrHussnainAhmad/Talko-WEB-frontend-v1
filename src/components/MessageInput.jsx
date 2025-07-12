@@ -1,15 +1,20 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X } from "lucide-react";
+import BlockedUserModal from './BlockedUserModal';
 import { toast } from "react-hot-toast";
 
-const MessageInput = ({ isBlocked = false }) => {
+const MessageInput = ({ isBlocked = false, isBlockedBy = false, selectedUser }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const { sendMessage, selectedUser, emitTyping, emitStopTyping } = useChatStore();
+  const { sendMessage, emitTyping, emitStopTyping } = useChatStore();
+  const { unblockUser } = useAuthStore();
 
   const handleSelectImg = (e) => {
     const file = e.target.files[0];
@@ -33,9 +38,9 @@ const MessageInput = ({ isBlocked = false }) => {
       fileInputRef.current.value = "";
     }
   };
-// Emit typing event
+// Emit typing event - don't emit if user is blocked
   useEffect(() => {
-    if (!selectedUser) return;
+    if (!selectedUser || isBlocked) return;
 
     if (text.trim()) {
       if (!isTyping) {
@@ -54,7 +59,7 @@ const MessageInput = ({ isBlocked = false }) => {
         setIsTyping(false);
       }
     }
-  }, [text, selectedUser, emitTyping, emitStopTyping, isTyping]);
+  }, [text, selectedUser, emitTyping, emitStopTyping, isTyping, isBlocked]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -68,10 +73,50 @@ const MessageInput = ({ isBlocked = false }) => {
     };
   }, []);
 
+  const handleConfirmSendBlocked = async () => {
+    setIsSendingMessage(true);
+    try {
+      // First unblock the user
+      await unblockUser(selectedUser._id);
+      
+      // Then send the message
+      await sendMessage({ 
+        text: text.trim(), 
+        image: imagePreview 
+      });
+      
+      // Clear the input
+      setText("");
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      
+      toast.success("User unblocked and message sent!");
+    } catch (error) {
+      toast.error("Failed to send message");
+    } finally {
+      setIsSendingMessage(false);
+      setShowBlockedModal(false);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
     if (!text.trim() && !imagePreview) return;
+
+    // If user A blocked user B, show modal
+    if (isBlocked) {
+      setShowBlockedModal(true);
+      return;
+    }
+    
+    // If user B is blocked by user A, show error
+    if (isBlockedBy) {
+      toast.error("You cannot send messages to this user");
+      return;
+    }
 
     try {
       await sendMessage({
@@ -95,13 +140,15 @@ const MessageInput = ({ isBlocked = false }) => {
     }
   };
 
-  // Don't render input if blocked
-  if (isBlocked) {
-    return null;
-  }
-
   return (
     <div className="p-4 w-full">
+      <BlockedUserModal
+        isOpen={showBlockedModal}
+        onClose={() => setShowBlockedModal(false)}
+        onConfirm={handleConfirmSendBlocked}
+        userName={selectedUser?.fullname}
+        isLoading={isSendingMessage}
+      />
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
           <div className="relative">

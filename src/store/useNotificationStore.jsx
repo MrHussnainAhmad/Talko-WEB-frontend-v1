@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
-import { requestNotificationPermission } from '../firebase';
+import { requestNotificationPermission } from '../firebase.js';
+import { soundManager } from '../utils/soundManager';
 
 export const useNotificationStore = create((set, get) => ({
   fcmToken: null,
@@ -53,6 +54,19 @@ export const useNotificationStore = create((set, get) => ({
         return;
       }
 
+      // Check if this is a fallback token for browsers with limited FCM support
+      const isFallbackToken = fcmToken.startsWith('BRAVE_FALLBACK_') || fcmToken.startsWith('SAFARI_FALLBACK_');
+      
+      if (isFallbackToken) {
+        console.log('🔄 Using fallback notification system for this browser');
+        // For fallback tokens, we'll rely on Socket.IO for real-time notifications
+        // Store the token locally but don't send to server
+        set({ fcmToken, notificationPermission: 'granted' });
+        console.log('✅ Fallback notification system enabled');
+        return;
+      }
+
+      // For regular FCM tokens, register with backend
       await axiosInstance.post('/notifications/fcm-token', {
         token: fcmToken,
         platform: 'web',
@@ -63,6 +77,8 @@ export const useNotificationStore = create((set, get) => ({
       set({ fcmToken });
     } catch (error) {
       console.error('Error registering FCM token:', error);
+      // Even if FCM registration fails, we can still use basic notifications
+      console.log('🔄 FCM registration failed, but basic notifications will still work');
     } finally {
       set({ isRegisteringToken: false });
     }
@@ -141,9 +157,38 @@ export const useNotificationStore = create((set, get) => ({
     }
   },
 
-  // Handle foreground notifications
+  // Handle foreground notifications with intelligent logic
   handleForegroundNotification: (payload) => {
     const { notification, data } = payload;
+    
+    // Get current chat state from chat store
+    const chatStore = window.chatStore || {};
+    const authStore = window.authStore || {};
+    const selectedUser = chatStore.selectedUser;
+    const authUser = authStore.authUser;
+    
+    // Check if user is currently in the same chat as the message sender
+    const isInSameChat = selectedUser && data.senderId && selectedUser._id === data.senderId;
+    const isUserOnTalkoraTab = !document.hidden; // Check if user is on Talkora tab
+    
+    console.log('📬 Processing notification:', {
+      isInSameChat,
+      isUserOnTalkoraTab,
+      selectedUserId: selectedUser?._id,
+      senderId: data.senderId,
+      notificationType: data.type
+    });
+    
+    // Don't show FCM notification if user is in the same chat AND on Talkora tab
+    if (isInSameChat && isUserOnTalkoraTab) {
+      console.log('🚫 Skipping FCM notification - user is in same chat and on Talkora tab');
+      // Still play sound but don't show toast (handled by chat store)
+      soundManager.playNotificationSound();
+      return;
+    }
+    
+    // Play sound
+    soundManager.playNotificationSound();
     
     // Show toast notification
     toast.custom(
@@ -173,7 +218,7 @@ export const useNotificationStore = create((set, get) => ({
           <div className="flex border-l border-gray-200">
             <button
               onClick={() => toast.dismiss(t.id)}
-              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 hover:bg-gray-50"
             >
               Close
             </button>
@@ -218,6 +263,16 @@ export const useNotificationStore = create((set, get) => ({
           },
           data: notificationData.data || {}
         });
+      });
+    }
+    
+    // Listen for messages from service worker (for background notifications)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'BACKGROUND_NOTIFICATION_SOUND') {
+          // Play sound when we get a background notification
+          soundManager.playNotificationSound();
+        }
       });
     }
   },

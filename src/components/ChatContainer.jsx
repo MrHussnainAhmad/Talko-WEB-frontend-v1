@@ -16,7 +16,7 @@ const ChatContainer = () => {
     dontListenToMessages,
     typingUsers,
   } = useChatStore();
-  const { authUser, checkBlockStatus } = useAuthStore();
+  const { authUser, checkBlockStatus, socket } = useAuthStore();
   const messageEndRef = useRef(null);
   const [blockStatus, setBlockStatus] = useState({ isBlocked: false, isBlockedBy: false });
 
@@ -36,6 +36,40 @@ const ChatContainer = () => {
     }
   }, [selectedUser?._id, getMessages, listenToMessages, dontListenToMessages]);
 
+  // Listen for real-time blocking status changes
+  useEffect(() => {
+    if (!socket || !selectedUser?._id) return;
+
+    const handleBlockingUpdate = (data) => {
+      // If the selected user blocked us or we blocked them
+      if (data.blockerId === selectedUser._id || data.blockedUserId === selectedUser._id) {
+        fetchBlockStatus();
+      }
+    };
+
+    const handleUnblockingUpdate = (data) => {
+      // If the selected user unblocked us or we unblocked them
+      if (data.unblockerId === selectedUser._id || data.unblockedUserId === selectedUser._id) {
+        fetchBlockStatus();
+      }
+    };
+
+    socket.on('youWereBlocked', handleBlockingUpdate);
+    socket.on('youWereUnblocked', handleUnblockingUpdate);
+    socket.on('blockActionConfirmed', fetchBlockStatus);
+    socket.on('refreshContactsList', (data) => {
+      console.log('🔄 ChatContainer: Refreshing block status due to:', data.type);
+      fetchBlockStatus();
+    });
+
+    return () => {
+      socket.off('youWereBlocked', handleBlockingUpdate);
+      socket.off('youWereUnblocked', handleUnblockingUpdate);
+      socket.off('blockActionConfirmed', fetchBlockStatus);
+      socket.off('refreshContactsList', fetchBlockStatus);
+    };
+  }, [selectedUser?._id, authUser, socket]);
+
   const fetchBlockStatus = async () => {
     if (selectedUser?._id) {
       const status = await checkBlockStatus(selectedUser._id);
@@ -48,7 +82,7 @@ const ChatContainer = () => {
       <div className="flex-1 flex flex-col overflow-auto">
         <ChatHeader />
         <MessageSkeleton />
-        <MessageInput isBlocked={blockStatus.isBlockedBy} />
+        <MessageInput isBlockedBy={blockStatus.isBlockedBy} isBlocked={blockStatus.isBlocked} selectedUser={selectedUser} />
       </div>
     );
   }
@@ -95,8 +129,8 @@ const ChatContainer = () => {
           </div>
         ))}
         
-        {/* Typing Indicator */}
-        {typingUsers.length > 0 && selectedUser && typingUsers.includes(selectedUser._id) && (
+        {/* Typing Indicator - hide if blocked */}
+        {typingUsers.length > 0 && selectedUser && typingUsers.includes(selectedUser._id) && !blockStatus.isBlocked && !blockStatus.isBlockedBy && (
           <div className="chat chat-start">
             <div className="chat-image avatar">
               <div className="size-10 rounded-full border">
@@ -132,7 +166,7 @@ const ChatContainer = () => {
         </div>
       )}
       
-      <MessageInput isBlocked={blockStatus.isBlockedBy} />
+      <MessageInput isBlockedBy={blockStatus.isBlockedBy} isBlocked={blockStatus.isBlocked} selectedUser={selectedUser} />
     </div>
   );
 };

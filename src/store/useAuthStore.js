@@ -178,6 +178,13 @@ export const useAuthStore = create((set, get) => ({
     try {
       const res = await axiosInstance.put("/auth/update-profile", data);
       set({ authUser: res.data.updatedUser });
+      
+      // Emit socket event for real-time profile update
+      const socket = get().socket;
+      if (socket) {
+        socket.emit('profileUpdated', res.data.updatedUser);
+      }
+      
       toast.success("Profile updated successfully!");
       return { success: true };
     } catch (error) {
@@ -258,6 +265,13 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Friend request accepted!");
       get().getIncomingRequests();
       get().getFriends();
+      
+      // Also update chat store users list for real-time chat list updates
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        chatStore.getUsers();
+      }
+      
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to accept request";
@@ -370,17 +384,43 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Blocking functionality
+  // Blocking functionality with instant UI updates
   blockUser: async (userId) => {
     set({ isBlockingUser: true });
+    
+    // Find the user to block from friends list
+    const userToBlock = get().friends.find(f => f._id === userId);
+    
+    // INSTANT UPDATE: Add to blocked users list but keep in friends list
+    set(state => ({
+      blockedUsers: userToBlock ? [...state.blockedUsers, userToBlock] : state.blockedUsers
+    }));
+    
     try {
       await axiosInstance.post(`/auth/block/${userId}`);
-      get().getBlockedUsers();
-      get().getFriends(); // Refresh friends list to update blocking status
+      
+      // Emit socket event for real-time blocking
+      const socket = get().socket;
+      const authUser = get().authUser;
+      if (socket && authUser) {
+        socket.emit('userBlocked', {
+          blockerId: authUser._id,
+          blockedUserId: userId,
+          blockerName: authUser.fullname || authUser.username
+        });
+      }
+      
+      toast.success('User blocked successfully');
       return { success: true };
     } catch (error) {
+      // ROLLBACK: If API fails, remove from blocked users
+      set(state => ({
+        blockedUsers: state.blockedUsers.filter(u => u._id !== userId)
+      }));
+      
       const errorMessage = error.response?.data?.message || "Failed to block user";
       console.error("Block user error:", errorMessage);
+      toast.error(errorMessage);
       return { success: false, message: errorMessage };
     } finally {
       set({ isBlockingUser: false });
@@ -389,14 +429,40 @@ export const useAuthStore = create((set, get) => ({
 
   unblockUser: async (userId) => {
     set({ isBlockingUser: true });
+    
+    // Find the user to unblock from blocked users list
+    const userToUnblock = get().blockedUsers.find(u => u._id === userId);
+    
+    // INSTANT UPDATE: Remove from blocked users list immediately
+    set(state => ({
+      blockedUsers: state.blockedUsers.filter(u => u._id !== userId)
+    }));
+    
     try {
       await axiosInstance.post(`/auth/unblock/${userId}`);
-      get().getBlockedUsers();
-      get().getFriends(); // Refresh friends list to update blocking status
+      
+      // Emit socket event for real-time unblocking
+      const socket = get().socket;
+      const authUser = get().authUser;
+      if (socket && authUser) {
+        socket.emit('userUnblocked', {
+          unblockerId: authUser._id,
+          unblockedUserId: userId,
+          unblockerName: authUser.fullname || authUser.username
+        });
+      }
+      
+      toast.success('User unblocked successfully');
       return { success: true };
     } catch (error) {
+      // ROLLBACK: If API fails, restore the previous state
+      set(state => ({
+        blockedUsers: userToUnblock ? [...state.blockedUsers, userToUnblock] : state.blockedUsers
+      }));
+      
       const errorMessage = error.response?.data?.message || "Failed to unblock user";
       console.error("Unblock user error:", errorMessage);
+      toast.error(errorMessage);
       return { success: false, message: errorMessage };
     } finally {
       set({ isBlockingUser: false });
@@ -410,6 +476,72 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error("Error fetching blocked users:", error);
     }
+  },
+  
+  // Realtime Blocked Users Update Listener with instant UI updates
+  handleUserBlock: (blockData) => {
+    const { blockerId, blockedId, blockedUser } = blockData;
+    
+    // If current user is the one being blocked
+    if (get().authUser._id === blockedId) {
+      // INSTANT UPDATE: Remove the blocker from friends list
+      set(state => ({
+        friends: state.friends.filter(f => f._id !== blockerId)
+      }));
+      toast.error('You have been blocked by someone.');
+    }
+    
+    // If current user is the one who blocked (for sync across devices)
+    if (get().authUser._id === blockerId && blockedUser) {
+      // INSTANT UPDATE: Ensure consistent state across devices
+      set(state => ({
+        friends: state.friends.filter(f => f._id !== blockedId),
+        blockedUsers: state.blockedUsers.some(u => u._id === blockedId) 
+          ? state.blockedUsers 
+          : [...state.blockedUsers, blockedUser]
+      }));
+    }
+    
+    // Also update chat store to reflect blocking in real-time
+    const chatStore = window.chatStore;
+    if (chatStore && chatStore.getUsers) {
+      chatStore.getUsers();
+    }
+  },
+
+  handleUserUnblock: (unblockData) => {
+    const { unblockerId, unblockedId, unblockedUser } = unblockData;
+    
+    // If current user is the one being unblocked
+    if (get().authUser._id === unblockedId) {
+      toast.info('You have been unblocked.');
+    }
+    
+    // If current user is the one who unblocked (for sync across devices)
+    if (get().authUser._id === unblockerId && unblockedUser) {
+      // INSTANT UPDATE: Ensure consistent state across devices
+      set(state => ({
+        blockedUsers: state.blockedUsers.filter(u => u._id !== unblockedId),
+        friends: state.friends.some(f => f._id === unblockedId) 
+          ? state.friends 
+          : [...state.friends, unblockedUser]
+      }));
+    }
+    
+    // Also update chat store to reflect unblocking in real-time
+    const chatStore = window.chatStore;
+    if (chatStore && chatStore.getUsers) {
+      chatStore.getUsers();
+    }
+  },
+  
+  // Realtime Profile Update Listener
+  handleProfileUpdate: (updatedUser) => {
+    set(state => ({
+      friends: state.friends.map(friend => friend._id === updatedUser._id ? updatedUser : friend),
+      authUser: state.authUser._id === updatedUser._id ? updatedUser : state.authUser
+    }));
+    toast.success(`${updatedUser.fullname}'s profile updated!`);
   },
 
   checkBlockStatus: async (userId) => {
@@ -473,12 +605,24 @@ export const useAuthStore = create((set, get) => ({
     socket.on("newFriendRequest", (data) => {
       toast.success(data.message);
       get().getIncomingRequests();
+      
+      // Also update chat store users list for real-time chat list updates
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        chatStore.getUsers();
+      }
     });
 
     socket.on("friendRequestAccepted", (data) => {
       toast.success(data.message);
       get().getOutgoingRequests();
       get().getFriends();
+      
+      // Also update chat store users list for real-time chat list updates
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        chatStore.getUsers();
+      }
     });
 
     socket.on("friendRequestRejected", (data) => {
@@ -504,6 +648,74 @@ export const useAuthStore = create((set, get) => ({
     socket.on('chatDeleted', (data) => {
       toast.info(data.message);
       get().getFriends();
+    });
+
+    // Real-time blocking event listeners
+    socket.on('youWereBlocked', (data) => {
+      console.log(`🚫 You were blocked by ${data.blockerName} (${data.blockerId})`);
+      
+      // Remove the blocker from friends list immediately
+      set(state => ({
+        friends: state.friends.filter(f => f._id !== data.blockerId)
+      }));
+      
+      // Update chat store to reflect changes
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        chatStore.getUsers();
+      }
+      
+      // If currently chatting with the blocker, clear the chat
+      if (chatStore && chatStore.selectedUser && chatStore.selectedUser._id === data.blockerId) {
+        chatStore.setSelectedUser(null);
+        toast.error(`You were blocked by ${data.blockerName}`);
+      }
+    });
+
+    socket.on('youWereUnblocked', (data) => {
+      console.log(`✅ You were unblocked by ${data.unblockerName} (${data.unblockerId})`);
+      
+      // Refresh friends list to reflect potential changes
+      get().getFriends();
+      
+      // Update chat store
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        chatStore.getUsers();
+      }
+      
+      toast.info(`You were unblocked by ${data.unblockerName}`);
+    });
+
+    socket.on('blockActionConfirmed', (data) => {
+      console.log(`✅ Block action confirmed: ${data.action} user ${data.targetUserId}`);
+      
+      // Refresh friends and blocked users lists
+      get().getFriends();
+      get().getBlockedUsers();
+      
+      // Update chat store
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        chatStore.getUsers();
+      }
+    });
+
+    socket.on('refreshContactsList', (data) => {
+      console.log(`🔄 Refreshing contacts list due to ${data.reason}`, data);
+      
+      // Refresh all relevant lists
+      get().getFriends();
+      get().getBlockedUsers();
+      
+      // IMPORTANT: Update chat store (this refreshes the chat list)
+      const chatStore = window.chatStore;
+      if (chatStore && chatStore.getUsers) {
+        console.log('🔄 Triggering chat list refresh from auth store');
+        chatStore.getUsers();
+      } else {
+        console.warn('⚠️ Chat store not available for refresh');
+      }
     });
 
     socket.on("userAccountDeleted", (data) => {
@@ -536,6 +748,23 @@ export const useAuthStore = create((set, get) => ({
         },
         data: notificationData.data || {}
       });
+    });
+    
+    // Real-time profile update listener
+    socket.on('profileUpdated', (updatedUser) => {
+      console.log('👤 Profile updated:', updatedUser);
+      get().handleProfileUpdate(updatedUser);
+    });
+    
+    // Real-time blocking listeners
+    socket.on('userBlocked', (blockData) => {
+      console.log('🚫 User blocked:', blockData);
+      get().handleUserBlock(blockData);
+    });
+    
+    socket.on('userUnblocked', (unblockData) => {
+      console.log('✅ User unblocked:', unblockData);
+      get().handleUserUnblock(unblockData);
     });
   },
   

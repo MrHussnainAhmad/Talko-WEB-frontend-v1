@@ -71,6 +71,11 @@ const HomePage = () => {
 
   const handleAcceptRequest = async (requestId) => {
     await acceptFriendRequest(requestId);
+    // Also trigger chat list updates for real-time updates
+    const chatStore = window.chatStore;
+    if (chatStore && chatStore.getUsers) {
+      chatStore.getUsers();
+    }
   };
 
   const handleRejectRequest = async (requestId) => {

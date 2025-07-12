@@ -192,6 +192,15 @@ export const playNotificationSound = () => {
       return;
     }
 
+    // Check user settings for notification sound
+    const settings = JSON.parse(localStorage.getItem('talkora-settings') || '{}');
+    const soundEnabled = settings.state?.notificationSoundEnabled !== false;
+    
+    if (!soundEnabled) {
+      console.log("🔕 Notification sound disabled by user settings");
+      return;
+    }
+
     console.log("🔊 Playing notification.mp3...");
     
     const audio = new Audio('/notification.mp3');
@@ -233,10 +242,19 @@ export const playConfirmSound = () => {
       return;
     }
 
+    // Check user settings for in-chat sound
+    const settings = JSON.parse(localStorage.getItem('talkora-settings') || '{}');
+    const inChatSoundEnabled = settings.state?.inChatSoundEnabled !== false;
+    
+    if (!inChatSoundEnabled) {
+      console.log("🔕 In-chat sound disabled by user settings");
+      return;
+    }
+
     console.log("🔊 User is in active chat - playing Confirm.wav...");
     
     const audio = new Audio('/Confirm.wav');
-    audio.volume = 0.5; // Slightly lower volume for in-chat notifications
+    audio.volume = 0.2; // Reduced volume for in-chat notifications
     
     // Add event listeners for debugging
     audio.addEventListener('loadstart', () => console.log("📁 Confirm audio loading started"));
@@ -271,9 +289,9 @@ export const getFormattedLastSeen = (lastSeenTime, isOnline = false) => {
   const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
   
   if (diffInMinutes < 60) {
-    return `last seen today at ${diffInMinutes} ago`;
+    return `last seen today at ${diffInMinutes} min ago`;
   } else if (diffInHours < 6) {
-    return `last seen today at ${diffInHours} ago`;
+    return `last seen today at ${diffInHours} hours ago`;
   } else if (diffInHours < 24) {
     const time12 = lastSeen.toLocaleTimeString('en-US', { 
       hour: 'numeric', 

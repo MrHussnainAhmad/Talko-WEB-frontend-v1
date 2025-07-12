@@ -12,6 +12,7 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useThemeStore } from "./store/useThemeStore.js";
 import { initializeAudio } from "./lib/utils.js"; // Add this import
+import { useNotificationStore } from "./store/useNotificationStore.jsx";
 
 const App = () => {
   const {
@@ -25,8 +26,21 @@ const App = () => {
     incomingRequests,
   } = useAuthStore();
   
-  const { setupGlobalNotifications, cleanupGlobalNotifications } = useChatStore();
+  const chatStore = useChatStore();
+  const { setupGlobalNotifications, cleanupGlobalNotifications } = chatStore;
   const { theme } = useThemeStore();
+  const { initializeNotifications, requestPermission } = useNotificationStore();
+  
+  // Make stores globally accessible for notification handling
+  React.useEffect(() => {
+    window.chatStore = chatStore;
+    window.authStore = useAuthStore.getState();
+    
+    return () => {
+      delete window.chatStore;
+      delete window.authStore;
+    };
+  }, [chatStore]);
 
   useEffect(() => {
     checkAuth();
@@ -113,16 +127,36 @@ const App = () => {
     }
   }, [authUser, socket, setupGlobalNotifications, cleanupGlobalNotifications]);
 
-  // Request notification permission when user logs in
+  // Automatically request notification permission when user logs in
   useEffect(() => {
-    if (
-      authUser &&
-      window.Notification &&
-      Notification.permission === "default"
-    ) {
-      Notification.requestPermission();
-    }
-  }, [authUser]);
+    const setupNotifications = async () => {
+      if (authUser) {
+        console.log("🔔 User logged in, setting up notifications...");
+        
+        // Initialize notification system
+        await initializeNotifications();
+        
+        // Automatically request permission if not already granted
+        if (window.Notification && Notification.permission !== "granted") {
+          console.log("📋 Current permission:", Notification.permission);
+          console.log("🔔 Automatically requesting notification permission...");
+          
+          try {
+            const success = await requestPermission();
+            if (success) {
+              console.log("✅ Notification permission granted and FCM token registered");
+            } else {
+              console.log("❌ Notification permission denied or failed");
+            }
+          } catch (error) {
+            console.error("❌ Error setting up notifications:", error);
+          }
+        }
+      }
+    };
+    
+    setupNotifications();
+  }, [authUser, initializeNotifications, requestPermission]);
 
   // Update document title with pending friend requests count
   useEffect(() => {
@@ -179,12 +213,23 @@ const App = () => {
       {/* Toast notifications with custom styling */}
       <Toaster
         position="top-right"
+        containerStyle={{
+          top: '80px', // Position below navbar (assuming navbar is ~64px + some margin)
+          right: '20px',
+          zIndex: 9999,
+        }}
         toastOptions={{
           duration: 4000,
           style: {
             background: "var(--fallback-b1,oklch(var(--b1)))",
             color: "var(--fallback-bc,oklch(var(--bc)))",
             border: "1px solid var(--fallback-b3,oklch(var(--b3)))",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            borderRadius: "8px",
+            padding: "16px",
+            fontSize: "14px",
+            minWidth: "300px",
+            maxWidth: "400px",
           },
           success: {
             iconTheme: {

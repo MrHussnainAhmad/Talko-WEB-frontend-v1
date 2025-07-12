@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { LogOut, MessageCircle, Settings, User, Bell, UserPlus, UserCheck, X, Search, BellRing } from "lucide-react";
+import { LogOut, MessageCircle, Settings, User, Bell, UserPlus, UserCheck, X, Search } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
-import { useNotificationStore } from "../store/useNotificationStore.jsx";
-import NotificationSettings from "./NotificationSettings";
 
 const Navbar = () => {
   const { 
@@ -18,12 +16,9 @@ const Navbar = () => {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAddFriend, setShowAddFriend] = useState(false);
-  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  
-  const { unreadNotifications } = useNotificationStore();
 
   useEffect(() => {
     if (authUser) {
@@ -193,21 +188,6 @@ const Navbar = () => {
               </div>
             )}
 
-            {authUser && (
-              <button
-                onClick={() => setShowNotificationSettings(true)}
-                className="btn btn-sm btn-ghost relative"
-                title="Notification Settings"
-              >
-                <BellRing className="w-4 h-4" />
-                {unreadNotifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadNotifications.length}
-                  </span>
-                )}
-              </button>
-            )}
-
             <a
               href="/settings"
               className="btn btn-sm gap-2 transition-colors"
@@ -243,10 +223,6 @@ const Navbar = () => {
         />
       )}
 
-      <NotificationSettings 
-        isOpen={showNotificationSettings}
-        onClose={() => setShowNotificationSettings(false)}
-      />
 
       {showAddFriend && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-[75px]">
