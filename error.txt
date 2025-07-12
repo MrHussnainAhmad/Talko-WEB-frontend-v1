@@ -1,42 +1,5 @@
-[23:26:12.854] Running build in Washington, D.C., USA (East) – iad1
-[23:26:12.855] Build machine configuration: 2 cores, 8 GB
-[23:26:12.898] Cloning github.com/MrHussnainAhmad/Talko-WEB-frontend-v1 (Branch: main, Commit: 2e2bd2e)
-[23:26:13.044] Previous build caches not available
-[23:26:13.196] Cloning completed: 298.000ms
-[23:26:13.478] Running "vercel build"
-[23:26:13.908] Vercel CLI 44.3.0
-[23:26:14.471] Installing dependencies...
-[23:26:22.256] 
-[23:26:22.257] added 352 packages in 8s
-[23:26:22.260] 
-[23:26:22.260] 56 packages are looking for funding
-[23:26:22.261]   run `npm fund` for details
-[23:26:22.309] Running "npm run build"
-[23:26:22.449] 
-[23:26:22.449] > Talkora - Private Chat App@0.1.1 build
-[23:26:22.450] > vite build
-[23:26:22.450] 
-[23:26:23.185] [36mvite v6.3.5 [32mbuilding for production...[36m[39m
-[23:26:23.251] transforming...
-[23:26:23.355] /*! 🌼 daisyUI 5.0.43 */
-[23:26:24.240] [32m✓[39m 34 modules transformed.
-[23:26:24.247] [31m✗[39m Build failed in 1.03s
-[23:26:24.248] [31merror during build:
-[23:26:24.248] [31m[vite:build-import-analysis] [plugin vite:build-import-analysis] src/store/useNotificationStore.js (160:75): Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.[31m
-[23:26:24.249] file: [36m/vercel/path0/src/store/useNotificationStore.js:160:75[31m
-[23:26:24.249] [33m
-[23:26:24.249] 158:               <div className="flex-shrink-0 pt-0.5">
-[23:26:24.249] 159:                 <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
-[23:26:24.249] 160:                   <span className="text-white font-medium text-sm">T</span>
-[23:26:24.249]                                                                                 ^
-[23:26:24.249] 161:                 </div>
-[23:26:24.249] 162:               </div>
-[23:26:24.249] [31m
-[23:26:24.249]     at getRollupError (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
-[23:26:24.250]     at error (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
-[23:26:24.250]     at Object.error (file:///vercel/path0/node_modules/rollup/dist/es/shared/node-entry.js:21947:20)
-[23:26:24.250]     at Object.error (file:///vercel/path0/node_modules/rollup/dist/es/shared/node-entry.js:21009:42)
-[23:26:24.250]     at Object.handler (file:///vercel/path0/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:45389:16)[39m
-[23:26:24.283] Error: Command "npm run build" exited with 1
-[23:26:24.488] 
-[23:26:27.442] Exiting build container
+backend_url=https://talkora-private-chat.up.railway.app
+backend_local=localhost:3000
+frontend_url=https://talkora-web-frontend-v1.vercel.app/
+frontend_localhost=localhost:5173
+react_naative_CORS=http://192.168.3.58:3000
