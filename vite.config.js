@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://talkora-backend-v1-1.vercel.app',
+        target: process.env.VITE_API_URL || 'https://talkora-backend-v1-1.vercel.app',
         changeOrigin: true,
         secure: true,
         timeout: 20000, // 20 seconds timeout for proxy
