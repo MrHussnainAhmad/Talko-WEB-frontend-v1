@@ -70,9 +70,24 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Logged in successfully!");
       get().connectSocket();
       
-      // Initialize notifications after successful login
-      setTimeout(() => {
-        useNotificationStore.getState().initializeNotifications();
+      // Auto-enable FCM notifications on first login
+      setTimeout(async () => {
+        try {
+          console.log('🔔 Auto-enabling FCM notifications for first-time login...');
+          const notificationStore = useNotificationStore.getState();
+          await notificationStore.initializeNotifications();
+          
+          // Automatically request permission and register FCM token
+          const permissionGranted = await notificationStore.requestPermission();
+          if (permissionGranted) {
+            console.log('✅ FCM notifications auto-enabled successfully');
+          } else {
+            console.log('⚠️ FCM permission not granted, but user can still use the app');
+          }
+        } catch (error) {
+          console.error('❌ Error auto-enabling FCM notifications:', error);
+          // Don't block login if notifications fail
+        }
       }, 1000);
       
       return { success: true };
