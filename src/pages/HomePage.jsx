@@ -39,11 +39,22 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     getIncomingRequests();
     getOutgoingRequests();
     getFriends();
+  }, []);
+
+  // Listen for screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleSearch = async (query) => {
@@ -384,8 +395,8 @@ const HomePage = () => {
             {/* Friend Management Panel */}
             {showFriendPanel && <FriendPanel />}
 
-            {/* Float Action Button for Friend Management */}
-            {!showFriendPanel && (
+            {/* Float Action Button for Friend Management - Hidden on screens 700px or less */}
+            {!showFriendPanel && screenWidth > 700 && (
               <button
                 onClick={() => setShowFriendPanel(true)}
                 className="fixed bottom-6 right-6 btn btn-primary btn-circle btn-lg shadow-lg z-10"
